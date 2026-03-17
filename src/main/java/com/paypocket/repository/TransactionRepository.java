@@ -20,7 +20,7 @@ public interface TransactionRepository extends Repository<Transaction, UUID> {
      * @param walletId id кошелька
      * @return отсортированный список транзакций кошелька
      */
-    List<Transaction> findByWalletIdAndType(UUID walletId);
+    List<Transaction> findByWalletId(UUID walletId);
 
     /**
      * Находит транзакции кошелька определенного типа.
@@ -30,12 +30,4 @@ public interface TransactionRepository extends Repository<Transaction, UUID> {
      * @return отфильтрованный список транзакций кошелька
      */
     List<Transaction> findByWalletIdAndType(UUID walletId, TransactionType type);
-
-    /**
-     * Находит транзакции пользователя по id.
-     *
-     * @param userId id пользователя
-     * @return список транзакций пользователя
-     */
-    List<Transaction> findByUserId(UUID userId);
 }

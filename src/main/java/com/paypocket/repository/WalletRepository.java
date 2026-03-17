@@ -4,7 +4,6 @@ import com.paypocket.model.User;
 import com.paypocket.model.Wallet;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
