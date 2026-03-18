@@ -40,7 +40,7 @@ public class UserService {
      * @param email     электронная почта
      * @param password  пароль
      * @return созданный пользователь
-     * @throws {@link DuplicateUserException} если username или email уже заняты
+     * @throws DuplicateUserException если username или email уже заняты
      */
     public User register(String username, String email, String password) {
         // Валидация входных данных
@@ -65,7 +65,7 @@ public class UserService {
      *
      * @param username имя пользователя
      * @return найденный пользователь
-     * @throws {@link UserNotFoundException} если пользователь не найден
+     * @throws UserNotFoundException если пользователь не найден
      */
     public User getByUsername(String username) {
         return userRepository.findByUsername(username)
@@ -77,7 +77,7 @@ public class UserService {
      *
      * @param userId имя пользователя
      * @return найденный пользователь
-     * @throws {@link UserNotFoundException} если пользователь не найден
+     * @throws UserNotFoundException если пользователь не найден
      */
     public User getById(UUID userId) {
         return userRepository.findById(userId)
@@ -93,9 +93,11 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    // TODO: добавить расширенные проверки
+
     /**
      * Проверяет корректность входных данных при регистрации.
-     * Здесь пока базовые проверки. Нужно использовать Bean validation.ё
+     * Здесь пока базовые проверки. Нужно использовать Bean validation.
      */
     private void validateRegistrationInput(String username, String email, String password) {
         if (username == null || username.isBlank()) {
