@@ -56,7 +56,7 @@ public class InMemoryTransactionRepository implements TransactionRepository {
         return storage.size();
     }
 
-    // ––– Специфичные методы TransactionRepository –––
+    // ––– Специфичные методы для TransactionRepository –––
 
     @Override
     public List<Transaction> findByWalletId(UUID walletId) {

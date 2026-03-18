@@ -58,6 +58,7 @@ public class InMemoryWalletRepository implements WalletRepository {
     public List<Wallet> findByUserId(UUID userId) {
         return storage.values().stream()
                 .filter(wallet -> wallet.getUserId().equals(userId))
+                .sorted(Comparator.comparing(Wallet::getCreatedAt))
                 .toList();
     }
 }
