@@ -2,10 +2,7 @@ package com.paypocket.service;
 
 
 import com.paypocket.dto.TransferResult;
-import com.paypocket.exception.InvalidAmountException;
-import com.paypocket.exception.SelfTransferException;
-import com.paypocket.exception.WalletAlreadyExistsException;
-import com.paypocket.exception.WalletNotFoundException;
+import com.paypocket.exception.*;
 import com.paypocket.model.Transaction;
 import com.paypocket.model.TransactionType;
 import com.paypocket.model.Wallet;
@@ -179,7 +176,17 @@ public class WalletService {
                 .build();
         transactionRepository.save(out);
 
-        receiverWallet.deposit(amount);
+        try {
+            receiverWallet.deposit(amount);
+        } catch (PayPocketException e) {
+            senderWallet.deposit(amount);
+
+            Transaction in = new Transaction.Builder(fromWalletId, TransactionType.TRANSACTION_IN, amount)
+                    .decscription("Перевод не выполнен, средства возвращены.")
+                    .build();
+            transactionRepository.save(in);
+            throw new PayPocketException("Перевод не выполнен, средства возвращены", e);
+        }
 
         Transaction in = new Transaction.Builder(toWalletId, TransactionType.TRANSACTION_IN, amount)
                 .counterpartyWalletId(fromWalletId)
