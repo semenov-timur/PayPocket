@@ -168,6 +168,10 @@ public class WalletService {
         Wallet senderWallet = getWalletOrThrow(fromWalletId);
         Wallet receiverWallet = getWalletOrThrow(toWalletId);
 
+        if (!senderWallet.getCurrency().equalsIgnoreCase(receiverWallet.getCurrency())) {
+            throw new CurrencyMismatchException(senderWallet.getCurrency(), receiverWallet.getCurrency());
+        }
+
         senderWallet.withdraw(amount);
 
         Transaction out = new Transaction.Builder(fromWalletId, TransactionType.TRANSACTION_OUT, amount)
