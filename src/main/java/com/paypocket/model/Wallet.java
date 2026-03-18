@@ -1,5 +1,8 @@
 package com.paypocket.model;
 
+import com.paypocket.exception.InsufficientFundsException;
+import com.paypocket.exception.InvalidAmountException;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -76,10 +79,7 @@ public class Wallet {
     public void withdraw(BigDecimal amount) {
         validatePositiveAmount(amount);
         if (this.balance.compareTo(amount) < 0) {
-            throw new IllegalArgumentException(
-                    String.format("Недостаточно средств. Баланс: %s, запрошено: %s",
-                            this.balance, amount)
-            );
+            throw new InsufficientFundsException(this.balance, amount);
         }
         this.balance = this.balance.subtract(amount);
     }
@@ -95,10 +95,7 @@ public class Wallet {
 
     private void validatePositiveAmount(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException(
-                    String.format("Сумма должна быть положительной, получено: %s",
-                            amount)
-            );
+            throw new InvalidAmountException(amount);
         }
     }
 
