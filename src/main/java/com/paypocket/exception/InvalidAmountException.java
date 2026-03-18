@@ -9,7 +9,8 @@ public class InvalidAmountException extends PayPocketException {
 
     public InvalidAmountException(BigDecimal amount) {
         super(String.format(
-                "Некорректная сумма операции: %s. Сумма должна быть больше нуля."
-        ));
+                "Некорректная сумма операции: %s. Сумма должна быть больше нуля.",
+                amount)
+        );
     }
 }

@@ -1,5 +1,7 @@
 package com.paypocket;
 
+import com.paypocket.dto.TransferResult;
+import com.paypocket.exception.*;
 import com.paypocket.model.*;
 import com.paypocket.repository.TransactionRepository;
 import com.paypocket.repository.UserRepository;
@@ -7,9 +9,12 @@ import com.paypocket.repository.WalletRepository;
 import com.paypocket.repository.inmemory.InMemoryTransactionRepository;
 import com.paypocket.repository.inmemory.InMemoryUserRepository;
 import com.paypocket.repository.inmemory.InMemoryWalletRepository;
+import com.paypocket.service.UserService;
+import com.paypocket.service.WalletService;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Точка входа в приложние PayPocket.
@@ -18,100 +23,155 @@ public class PayPocketApp {
     public static void main(String[] args) {
         System.out.println("===== PayPocket – Digital Wallet =====\n");
 
-        // Инициализация репозиторием
-        // тип переменной – интерфейс, а не реализация
-        // Пример реализации полиморфизма: завтра можно будет поменять
-        // на JdbcRepository и больше ничего не изменится
-        UserRepository userRepo = new InMemoryUserRepository();
-        WalletRepository walletRepo = new InMemoryWalletRepository();
-        TransactionRepository transactionRepo = new InMemoryTransactionRepository();
+        UserRepository userRepository = new InMemoryUserRepository();
+        WalletRepository walletRepository = new InMemoryWalletRepository();
+        TransactionRepository transactionRepository = new InMemoryTransactionRepository();
 
-        // Создаем пользователей
-        User mia = new User("mia", "miaskam@icloud.com", "pass1234");
-        User timur = new User("timur", "semenov-timur@icloud.com", "pass1234");
-        userRepo.save(mia);
-        userRepo.save(timur);
+        UserService userService = new UserService(userRepository);
+        WalletService walletService = new WalletService(walletRepository, transactionRepository);
 
-        System.out.println("Зарегестрировано пользователей: " + userRepo.count());
-        System.out.println("Поиск mia: " + userRepo.findByUsername("mia").isPresent());
-        System.out.println("Поиск kirill: " + userRepo.findByUsername("kirill").isPresent());
+        // =====================================
+        // Сценарий 1: Регистрация пользователей
+        // =====================================
+        System.out.println("––––– Регистрация пользователей –––––");
 
-        // Создаем кошелек
-        Wallet miaWallet = new Wallet(mia.getId(), "Кошелек Мии");
-        Wallet miaBackupWallet = new Wallet(mia.getId(), "Запасной кошелек Мии");
-        Wallet timurWallet = new Wallet(timur.getId(), "Кошелек Тимура");
-        walletRepo.save(miaWallet);
-        walletRepo.save(miaBackupWallet);
-        walletRepo.save(timurWallet);
+        User mia = userService.register("mia", "miyaskam@icloud.com", "pass1234");
+        System.out.println("Зарегестрирован: " + mia.getUsername());
 
-        System.out.println("\nКошельки Мии найдены по userId: " + walletRepo.findByUserId(mia.getId()));
+        User timur = userService.register("timur", "semenov-timur@icloud.com", "pass1234");
+        System.out.println("Зарегестрирован: " + timur.getUsername());
 
-        // Пополняем
-        miaWallet.deposit(new BigDecimal("5000.00"));
+        try {
+            userService.register("timur", "semenov-timur@icloud.com", "pass1234");
+        } catch (DuplicateUserException e) {
+            System.out.println("Ожидаемая ошибка: " + e.getMessage());
+        }
 
-        // Создание записи транзакции
-        Transaction deposit = new Transaction.Builder(
+        // =====================================
+        // Сценарий 2: Создание кошельков
+        // =====================================
+        System.out.println("––––– Создание кошельков –––––");
+
+        Wallet miaWallet = walletService.createWallet(mia.getId(), "Основной");
+        System.out.println("Кошелек Мии: " + miaWallet.getName() + " (" + miaWallet.getBalance() + " " + miaWallet.getCurrency() + ")");
+
+        Wallet timurWallet = walletService.createWallet(timur.getId(), "Основной");
+        System.out.println("Кошелек Тимура: " + timurWallet.getName() + " (" + timurWallet.getBalance() + " " + timurWallet.getCurrency() + ")");
+
+        Wallet timurUsdWallet = walletService.createWallet(timur.getId(), "Долларовый", "USD");
+        System.out.println("Второй кошелек Тимура: " + timurUsdWallet.getName() + " (" + timurUsdWallet.getBalance() + " " + timurUsdWallet.getCurrency() + ")");
+
+        // =====================================
+        // Сценарий 3: Пополнение
+        // =====================================
+        System.out.println("––––– Пополнение –––––");
+
+        walletService.deposit(miaWallet.getId(), new BigDecimal("10000.00"));
+        walletService.deposit(timurWallet.getId(), new BigDecimal("5000.00"));
+        walletService.deposit(timurUsdWallet.getId(), new BigDecimal("500.00"));
+
+        System.out.println("Баланс Мии (RUB): " + walletService.getBalance(miaWallet.getId()));
+        System.out.println("Баланс Тимура (RUB): " + walletService.getBalance(timurWallet.getId()));
+        System.out.println("Баланс Тимура (USD): " + walletService.getBalance(timurUsdWallet.getId()));
+
+        // =====================================
+        // Сценарий 4: Перевод
+        // =====================================
+        System.out.println("––––– Перевод –––––");
+
+        TransferResult result = walletService.transfer(
                 miaWallet.getId(),
-                TransactionType.DEPOSIT,
-                new BigDecimal("5000.00")
-        )
-                .decscription("Пополнение через банкомат")
-                .build();
-        transactionRepo.save(deposit);
+                timurWallet.getId(),
+                new BigDecimal("2500.00")
+        );
 
-        System.out.println("Баланс Мии после пополнения: " + miaWallet.getBalance() + " " + miaWallet.getCurrency());
+        System.out.println("Перевод выполнен!");
+        System.out.println("Баланс Мии: " + result.getSenderBalanceAfter() + " RUB");
+        System.out.println("Баланс Тимура: " + result.getReceiverBalanceAfter() + " RUB");
 
-        // ––– Перевод от Мии Тимуру –––
-        BigDecimal transferAmount = new BigDecimal("1500.00");
+        // =====================================
+        // Сценарий 5: Обработка ошибок
+        // =====================================
+        System.out.println("––––– Обработка ошибок –––––");
 
-        if (miaWallet.hasSufficientFunds(transferAmount)) {
-            miaWallet.withdraw(transferAmount);
-            timurWallet.deposit(transferAmount);
-
-            Transaction out = new Transaction.Builder(miaWallet.getId(), TransactionType.TRANSACTION_OUT, transferAmount)
-                    .counterpartyWalletId(timurWallet.getId())
-                    .decscription("Перевод Тимуру")
-                    .build();
-            transactionRepo.save(out);
-
-            Transaction in = new Transaction.Builder(timurWallet.getId(), TransactionType.TRANSACTION_IN, transferAmount)
-                    .counterpartyWalletId(miaWallet.getId())
-                    .decscription("Перевод от Мии")
-                    .build();
-            transactionRepo.save(in);
-
-            System.out.println("Перевод выполнен: " + transferAmount + "RUB");
+        // Самому себе
+        try {
+            walletService.transfer(
+                    miaWallet.getId(),
+                    miaWallet.getId(),
+                    new BigDecimal("2500.00")
+            );
+        } catch (SelfTransferException e) {
+            System.out.println("[OK] - " + e.getMessage());
         }
 
-        System.out.println("\nБаланс Мии: " + miaWallet.getBalance() + " " +  miaWallet.getCurrency());
-        System.out.println("\nБаланс Тимура: " + timurWallet.getBalance() + " " +  timurWallet.getCurrency());
-
-        List<Transaction> timurHistory = transactionRepo.findByWalletId(timurWallet.getId());
-        System.out.println("История Тимура: " +  timurHistory.size() + " операций");
-        for (Transaction transaction : timurHistory) {
-            System.out.println(String.format("[%s] %s %s – %s\n",
-                    transaction.getType(),
-                    transaction.getAmount(),
-                    timurWallet.getCurrency(),
-                    transaction.getDescription()));
+        // Недостаточно средств
+        try {
+            walletService.transfer(
+                    miaWallet.getId(),
+                    timurWallet.getId(),
+                    new BigDecimal("9999.00")
+            );
+        } catch (InsufficientFundsException e) {
+            System.out.println("[OK] - " + e.getMessage());
         }
 
-        List<Transaction> miaHistory = transactionRepo.findByWalletId(miaWallet.getId());
-        System.out.println("История переводов Мии: " +  miaHistory.size() + " операций");
+        // Некорректная сумма
+        try {
+            walletService.withdraw(miaWallet.getId(), new BigDecimal("-100.00"));
+        } catch (InvalidAmountException e) {
+            System.out.println("[OK] - " + e.getMessage());
+        }
+
+        // Несуществующий кошелек
+        try {
+            walletService.getBalance(UUID.randomUUID());
+        } catch (WalletNotFoundException e) {
+            System.out.println("[OK] - " + e.getMessage());
+        }
+
+        // =====================================
+        // Сценарий 6: История операций
+        // =====================================
+        System.out.println("––––– История операций Мии –––––");
+
+        List<Transaction> miaHistory = walletService.getTransactionHistory(miaWallet.getId());
         for (Transaction transaction : miaHistory) {
-            System.out.println(String.format("[%s] %s %s – %s",
+            System.out.printf(" %-14s %10s RUB %s%n",
                     transaction.getType(),
                     transaction.getAmount(),
-                    miaWallet.getCurrency(),
-                    transaction.getDescription()));
+                    transaction.getDescription());
         }
 
-        // --- Общая статистика ---
-        System.out.println("\n=== Статистика системы ===");
-        System.out.println("Пользователей: " + userRepo.count());
-        System.out.println("Кошельков: " + walletRepo.count());
-        System.out.println("Транзакций: " + transactionRepo.count());
+        System.out.println("––––– История операций Тимура –––––");
 
-        System.out.println("\nВсе функции работают корректно!");
+        List<Transaction> timurHistory = walletService.getTransactionHistory(timurWallet.getId());
+        for (Transaction transaction : timurHistory) {
+            System.out.printf(" %-14s %10s RUB %s%n",
+                    transaction.getType(),
+                    transaction.getAmount(),
+                    transaction.getDescription());
+        }
+
+        List<Transaction> timurIncoming = walletService.getTransactionHistory(timurWallet.getId(), TransactionType.TRANSACTION_IN);
+        System.out.println("Входящих переводов Тимура: " +  timurIncoming.size());
+
+        // =====================================
+        // Сценарий 7: Все кошельки пользователя
+        // =====================================
+        System.out.println("––––– Все кошельки Тимура –––––");
+
+        List<Wallet> timurWallets = walletService.getUserWallets(timur.getId());
+        for (Wallet wallet : timurWallets) {
+            System.out.printf(" %s: %s %s%n",
+                    wallet.getName(),
+                    wallet.getBalance(),
+                    wallet.getCurrency());
+        }
+
+        // =====================================
+        // Итог
+        // =====================================
+        System.out.println("––––– Все сценарии пройдены успешно! –––––");
     }
 }
