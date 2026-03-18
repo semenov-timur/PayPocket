@@ -24,15 +24,22 @@ public class Wallet {
     // ––– Конструкторы –––
 
     /**
-     * Создание НОВОГО кошелька.
+     * Создание НОВОГО кошелька с выбором валюты.
      */
-    public Wallet(UUID userId, String name) {
+    public Wallet(UUID userId, String name, String currency) {
         this.id = UUID.randomUUID();
         this.userId = userId;
         this.name = name;
         this.balance = BigDecimal.ZERO;
-        this.currency = "RUB";
+        this.currency = currency;
         this.createdAt = LocalDateTime.now();
+    }
+
+    /**
+     * Создание НОВОГО рублевого кошелька по умолчанию.
+     */
+    public Wallet(UUID userId, String name) {
+        this(userId, name, "RUB");
     }
 
     /**
