@@ -16,6 +16,8 @@ import java.util.Scanner;
 
 public class ConsoleUI {
 
+    private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:");
+
     Scanner scanner;
     UserService userService;
     WalletService walletService;
@@ -369,7 +371,7 @@ public class ConsoleUI {
                     transaction.getType(),
                     transaction.getAmount(),
                     wallet.getCurrency(),
-                    transaction.getCreatedAt().format(DateTimeFormatter.ISO_DATE),
+                    transaction.getCreatedAt().format(DATE_TIME_FORMAT),
                     transaction.getDescription() != null ? transaction.getDescription() : ""
             );
         }
