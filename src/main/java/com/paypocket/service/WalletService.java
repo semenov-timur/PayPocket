@@ -58,8 +58,8 @@ public class WalletService {
         List<Wallet> existingWallets = walletRepository.findByUserId(userId);
        boolean currencyExists = existingWallets.stream()
                .anyMatch(wallet -> wallet.getCurrency().equalsIgnoreCase(currency));
-       if (currencyExists) {
-           throw new WalletAlreadyExistsException(userId, currency);
+       if (currencyExists && !currency.equalsIgnoreCase("RUB")) {
+           throw new WalletAlreadyExistsException(currency);
        }
 
         Wallet wallet = new Wallet(userId, name, currency);

@@ -8,9 +8,9 @@ import java.util.UUID;
  */
 public class WalletAlreadyExistsException extends PayPocketException {
 
-    public  WalletAlreadyExistsException(UUID userId, String currency) {
+    public  WalletAlreadyExistsException(String currency) {
         super(String.format(
-                "У пользователя %s уже есть кошелек в валюте %s", userId, currency
+                "У вас уже есть кошелек в валюте %s", currency
         ));
     }
 }
