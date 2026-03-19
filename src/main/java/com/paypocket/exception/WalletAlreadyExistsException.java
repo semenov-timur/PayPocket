@@ -1,5 +1,7 @@
 package com.paypocket.exception;
 
+import com.paypocket.model.Currency;
+
 import java.util.UUID;
 
 /**
@@ -8,9 +10,9 @@ import java.util.UUID;
  */
 public class WalletAlreadyExistsException extends PayPocketException {
 
-    public  WalletAlreadyExistsException(String currency) {
+    public  WalletAlreadyExistsException(Currency currency) {
         super(String.format(
-                "У вас уже есть кошелек в валюте %s", currency
+                "У вас уже есть кошелек в валюте: %s", currency.getDescription()
         ));
     }
 }

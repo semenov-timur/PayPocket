@@ -2,6 +2,7 @@ package com.paypocket.model;
 
 import com.paypocket.exception.InsufficientFundsException;
 import com.paypocket.exception.InvalidAmountException;
+import com.paypocket.model.Currency;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,7 +22,7 @@ public class Wallet {
     private final UUID userId;              // к какому пользователю привязан
     private String name;                    // "Основной", "Копилка" и т.д.
     private BigDecimal balance;
-    private final String currency;          // "RUB" по умолчанию
+    private final Currency currency;          // "RUB" по умолчанию
     private final LocalDateTime createdAt;
 
     // ––– Конструкторы –––
@@ -29,7 +30,7 @@ public class Wallet {
     /**
      * Создание НОВОГО кошелька с выбором валюты.
      */
-    public Wallet(UUID userId, String name, String currency) {
+    public Wallet(UUID userId, String name, Currency currency) {
         this.id = UUID.randomUUID();
         this.userId = userId;
         this.name = name;
@@ -42,13 +43,13 @@ public class Wallet {
      * Создание НОВОГО рублевого кошелька по умолчанию.
      */
     public Wallet(UUID userId, String name) {
-        this(userId, name, "RUB");
+        this(userId, name, Currency.RUB);
     }
 
     /**
      * Восстановление существующего кошелька из хранилища.
      */
-    public Wallet(UUID id, UUID userId, String name, BigDecimal balance, String currency, LocalDateTime createdAt) {
+    public Wallet(UUID id, UUID userId, String name, BigDecimal balance, Currency currency, LocalDateTime createdAt) {
         this.id = id;
         this.userId = userId;
         this.name = name;
@@ -117,7 +118,7 @@ public class Wallet {
         return balance;
     }
 
-    public String getCurrency() {
+    public Currency getCurrency() {
         return currency;
     }
 

@@ -3,6 +3,7 @@ package com.paypocket.service;
 
 import com.paypocket.dto.TransferResult;
 import com.paypocket.exception.*;
+import com.paypocket.model.Currency;
 import com.paypocket.model.Transaction;
 import com.paypocket.model.TransactionType;
 import com.paypocket.model.Wallet;
@@ -54,11 +55,11 @@ public class WalletService {
      * @param currency  валюта кошелька (RUB, USD, EUR)
      * @return созданный кошелек с нулевым балансом
      */
-    public Wallet createWallet(UUID userId, String name, String currency) {
+    public Wallet createWallet(UUID userId, String name, Currency currency) {
         List<Wallet> existingWallets = walletRepository.findByUserId(userId);
        boolean currencyExists = existingWallets.stream()
-               .anyMatch(wallet -> wallet.getCurrency().equalsIgnoreCase(currency));
-       if (currencyExists && !currency.equalsIgnoreCase("RUB")) {
+               .anyMatch(wallet -> wallet.getCurrency() == currency);
+       if (currencyExists && currency != Currency.RUB) {
            throw new WalletAlreadyExistsException(currency);
        }
 
@@ -73,7 +74,7 @@ public class WalletService {
      * @return созданный кошелек с нулевым балансом
      */
     public Wallet createWallet(UUID userId, String name) {
-        Wallet wallet = new Wallet(userId, name, "RUB");
+        Wallet wallet = new Wallet(userId, name, Currency.RUB);
         return walletRepository.save(wallet);
     }
 
@@ -168,9 +169,9 @@ public class WalletService {
         Wallet senderWallet = getWalletOrThrow(fromWalletId);
         Wallet receiverWallet = getWalletOrThrow(toWalletId);
 
-        if (!senderWallet.getCurrency().equalsIgnoreCase(receiverWallet.getCurrency())) {
+        if (senderWallet.getCurrency() != receiverWallet.getCurrency()) {
             throw new CurrencyMismatchException(senderWallet.getCurrency(), receiverWallet.getCurrency());
-        }
+    }
 
         senderWallet.withdraw(amount);
 

@@ -2,6 +2,7 @@ package com.paypocket.ui;
 
 import com.paypocket.dto.TransferResult;
 import com.paypocket.exception.PayPocketException;
+import com.paypocket.model.Currency;
 import com.paypocket.model.Transaction;
 import com.paypocket.model.User;
 import com.paypocket.model.Wallet;
@@ -176,12 +177,29 @@ public class ConsoleUI {
         System.out.println("\n––– Создание кошелька –––");
 
         String name = readString("Название кошелька: ");
-        String currency = readString("Валюта (RUB/USD/EUR) [по умолчанию RUB]: ");
 
-        if (currency.isBlank()) {
-            currency = "RUB";
+        System.out.println("Доступные валюты:");
+        for (Currency c : Currency.values()) {
+            System.out.printf("  %s – %s (%s)%n",
+                    c.name(),
+                    c.getDescription(),
+                    c.getSymbol()
+            );
         }
-        currency = currency.toUpperCase();
+
+        String currencyInput = readString("Валюта [по умолчанию RUB]: ");
+        Currency currency;
+        if (currencyInput.isBlank()) {
+            currency = Currency.RUB;
+        }
+        else {
+            currencyInput = currencyInput.toUpperCase();
+            currency = Currency.fromString(currencyInput);
+            if (currency == null) {
+                System.out.println("Неизвестная валюта: " + currencyInput);
+                return;
+            }
+        }
 
         try {
             Wallet wallet = walletService.createWallet(currentUser.getId(), name, currency);
@@ -247,7 +265,7 @@ public class ConsoleUI {
         }
 
         List<Wallet> compatibleWallets = recipientWallets.stream()
-                .filter(w -> w.getCurrency().equalsIgnoreCase(senderWallet.getCurrency()))
+                .filter(w -> w.getCurrency() == senderWallet.getCurrency())
                 .toList();
 
         if (compatibleWallets.isEmpty()) {
