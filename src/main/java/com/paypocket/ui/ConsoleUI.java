@@ -131,18 +131,13 @@ public class ConsoleUI {
         String password = readString("Password: ");
 
         try {
-            User user = userService.getByUsername(username);
-            if (user.getPassword().equals(password)) {
-                currentUser = user;
-                System.out.println("Здравствуйте, " + user.getUsername() + "!");
-            }
-            else {
-                System.out.println("Неверный пароль!");
-            }
+            User user = userService.authenticate(username, password);
+            currentUser = user;
+            System.out.println("Здравствуйте, " + currentUser.getUsername() + "!");
         } catch (PayPocketException e) {
             System.out.printf("Ошибка: " + e.getMessage());
         } catch (IllegalArgumentException e) {
-            System.out.println("Ошибка валидации: " + e.getMessage());
+            System.out.println("Ошибка аутентификации: " + e.getMessage());
         }
     }
 

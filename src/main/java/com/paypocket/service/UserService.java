@@ -61,6 +61,26 @@ public class UserService {
     }
 
     /**
+     * Аутентификация пользователя.
+     *
+     * @param username имя пользователя
+     * @param password пароль
+     * @return авторизованный пользователь
+     * @throws UserNotFoundException если пользователь не найден
+     * @throws IllegalArgumentException если пароль неверный
+     */
+    public User authenticate(String username, String password) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException(username));
+
+        if  (!user.getPassword().equals(password)) {
+            throw new IllegalArgumentException("Неверный пароль!");
+        }
+
+        return user;
+    }
+
+    /**
      * Находит пользователя по username.
      *
      * @param username имя пользователя
