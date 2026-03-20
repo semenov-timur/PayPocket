@@ -24,7 +24,7 @@ import java.util.Scanner;
  */
 public class ConsoleUI {
 
-    private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:");
+    private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     Scanner scanner;
     UserService userService;
@@ -370,7 +370,7 @@ public class ConsoleUI {
     }
 
     private void handleShowHistory() {
-        System.out.println("\n––– Снятие средств –––");
+        System.out.println("\n––– История операций –––");
 
         Wallet wallet = selectWallet("Выберите кошелек");
         if (wallet == null) return;

@@ -8,8 +8,6 @@ import java.util.UUID;
 public class SelfTransferException extends PayPocketException {
 
     public SelfTransferException(UUID walletId) {
-        super(String.format(
-                "Нельзя перевести средства на тот же кошелек: " + walletId
-        ));
+        super("Нельзя перевести средства на тот же кошелек");
     }
 }

@@ -41,7 +41,5 @@ public class PayPocketApp {
 
         ConsoleUI ui = new ConsoleUI(userService, walletService);
         ui.start();
-
-        persistence.save(userRepository, walletRepository, transactionRepository);
     }
 }
