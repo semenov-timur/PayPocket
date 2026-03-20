@@ -10,6 +10,7 @@ import com.paypocket.service.UserService;
 import com.paypocket.service.WalletService;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Scanner;
@@ -443,6 +444,14 @@ public class ConsoleUI {
                 System.out.println("Сумма должна быть больше нуля.");
                 return null;
             }
+
+            if (amount.scale() > 2) {
+                System.out.println("Максимум два знака после точки (например: 9.99).");
+                return null;
+            }
+
+            amount = amount.setScale(2, RoundingMode.UNNECESSARY);
+
             return amount;
         }  catch (NumberFormatException e) {
             System.out.println("Некорректная сумма.");

@@ -283,7 +283,7 @@ public class WalletService {
     }
 
     private void validateAmount(BigDecimal amount) {
-        if (amount == null ||  amount.compareTo(BigDecimal.ZERO) <= 0) {
+        if (amount == null ||  amount.compareTo(BigDecimal.ZERO) <= 0 || amount.scale() > 2) {
             throw new InvalidAmountException(amount);
         }
     }
