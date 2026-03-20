@@ -12,6 +12,7 @@ import java.util.UUID;
  * однако это проверяется на сервиса/БД, а не в самой модели пользователя.
  */
 public class User {
+
     private UUID id;                  // final – идентификатор не изменяется после создания
     private String username;
     private String email;

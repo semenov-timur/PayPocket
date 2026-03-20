@@ -1,6 +1,5 @@
 package com.paypocket.repository;
 
-import com.paypocket.model.User;
 import com.paypocket.model.Wallet;
 
 import java.util.List;

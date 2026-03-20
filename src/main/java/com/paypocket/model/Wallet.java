@@ -2,7 +2,6 @@ package com.paypocket.model;
 
 import com.paypocket.exception.InsufficientFundsException;
 import com.paypocket.exception.InvalidAmountException;
-import com.paypocket.model.Currency;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

@@ -1,8 +1,5 @@
 package com.paypocket;
 
-import com.paypocket.dto.TransferResult;
-import com.paypocket.exception.*;
-import com.paypocket.model.*;
 import com.paypocket.persistence.JsonDataPersistence;
 import com.paypocket.repository.TransactionRepository;
 import com.paypocket.repository.UserRepository;
@@ -14,10 +11,7 @@ import com.paypocket.service.UserService;
 import com.paypocket.service.WalletService;
 import com.paypocket.ui.ConsoleUI;
 
-import java.math.BigDecimal;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * Точка входа в приложние PayPocket.

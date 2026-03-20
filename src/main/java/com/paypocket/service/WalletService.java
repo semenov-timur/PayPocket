@@ -1,6 +1,5 @@
 package com.paypocket.service;
 
-
 import com.paypocket.dto.TransferResult;
 import com.paypocket.exception.*;
 import com.paypocket.model.Currency;
@@ -35,6 +34,9 @@ public class WalletService {
     private TransactionRepository transactionRepository;
 
     /**
+     * Конструктор с внедрением зависимостей.
+     * Не привязан к реализвации, работает с интерфейсами.
+     *
      * @param walletRepository      репозиторий кошельков
      * @param transactionRepository репозиторий трензакций
      */

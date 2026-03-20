@@ -15,6 +15,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * Консольный пользовательский интерфейс приложения PayPocket.
+ *
+ * <p>Реализует цикл взаимодействия с пользователем через терминал.
+ * Работает только через сервисный слой, ничего не знает о репозиториях и способах
+ * хранения данных.</p>
+ */
 public class ConsoleUI {
 
     private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:");
@@ -34,6 +41,9 @@ public class ConsoleUI {
     // ГЛАВНЫЙ ЦИКЛ
     // ===========================================
 
+    /**
+     * Запускает приложение. Главный цикл работает до выбора пункта "Выход".
+     */
     public void start() {
         System.out.println("╔════════════════════════════════════╗");
         System.out.println("║     PayPocket – Digital Wallet     ║");
@@ -57,6 +67,9 @@ public class ConsoleUI {
     // МЕНЮ ГОСТЯ (НЕ АВТОРИЗОВАН)
     // ===========================================
 
+    /**
+     * @return false если пользователь выбрал "Выход"
+     */
     private boolean showGuestMenu() {
         System.out.println("\n––– Главное меню –––");
         System.out.println("1. Войти");
@@ -79,6 +92,9 @@ public class ConsoleUI {
     // МЕНЮ ПОЛЬЗОВАТЕЛЯ (АВТОРИЗОВАН)
     // ===========================================
 
+    /**
+     * @return false если пользователь выбрал "Выход из приложения"
+     */
     private boolean showUserMenu() {
         System.out.println("\n––– Главное меню –––");
         System.out.println("1. Мои кошельки");
@@ -180,6 +196,10 @@ public class ConsoleUI {
         System.out.println("\n––– Создание кошелька –––");
 
         String name = readString("Название кошелька: ");
+
+        if (name.isBlank()) {
+            name = "Безымянный";
+        }
 
         System.out.println("Доступные валюты:");
         for (Currency c : Currency.values()) {
@@ -421,12 +441,17 @@ public class ConsoleUI {
         return wallets.get(choice);
     }
 
-
+    /**
+     * Читает строку из консоли.
+     */
     private String readString(String prompt) {
         System.out.print(prompt);
         return scanner.nextLine().trim();
     }
 
+    /**
+     * Безопасно читает целое число. При ошибке возвращает -1.
+     */
     private int readInt(String prompt) {
         System.out.print(prompt);
         try {
@@ -436,6 +461,9 @@ public class ConsoleUI {
         }
     }
 
+    /**
+     * Безопасно читает сумму (BigDecimal). При ошибке возвращает null.
+     */
     private BigDecimal readAmount(String prompt) {
         System.out.print(prompt);
         try {

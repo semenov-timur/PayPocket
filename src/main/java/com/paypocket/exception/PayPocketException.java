@@ -1,7 +1,5 @@
 package com.paypocket.exception;
 
-import com.paypocket.PayPocketApp;
-
 /**
  * Базовое исключение приложения PayPocket.
  *
