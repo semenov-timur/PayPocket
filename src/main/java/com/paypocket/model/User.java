@@ -12,11 +12,11 @@ import java.util.UUID;
  * однако это проверяется на сервиса/БД, а не в самой модели пользователя.
  */
 public class User {
-    private final UUID id;                  // final – идентификатор не изменяется после создания
+    private UUID id;                  // final – идентификатор не изменяется после создания
     private String username;
     private String email;
     private String password;                // TODO: в дальнейшем хранить хэш
-    private final LocalDateTime createdAt;
+    private LocalDateTime createdAt;
 
     /**
      * Конструктор для создания НОВОГО пользователя.
@@ -41,6 +41,11 @@ public class User {
         this.password = password;
         this.createdAt = createdAt;
     }
+
+    /**
+     * Конструктор без аргументов для десериализации.
+     */
+    User() {}
 
     // ––– Геттеры –––
 

@@ -18,12 +18,12 @@ import java.util.UUID;
  */
 public class Wallet {
 
-    private final UUID id;
-    private final UUID userId;              // к какому пользователю привязан
+    private UUID id;
+    private UUID userId;              // к какому пользователю привязан
     private String name;                    // "Основной", "Копилка" и т.д.
     private BigDecimal balance;
-    private final Currency currency;          // "RUB" по умолчанию
-    private final LocalDateTime createdAt;
+    private Currency currency;          // "RUB" по умолчанию
+    private LocalDateTime createdAt;
 
     // ––– Конструкторы –––
 
@@ -57,6 +57,11 @@ public class Wallet {
         this.currency = currency;
         this.createdAt = createdAt;
     }
+
+    /**
+     * Конструктор без аргументов для десериализации.
+     */
+    Wallet() {}
 
     // ––– Бизнес-методы для изменения баланса
 

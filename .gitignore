@@ -4,6 +4,9 @@
 !**/src/test/**/build/
 .kotlin
 
+### App Data ###
+data/
+
 ### Gradle ###
 .gradle/
 build/

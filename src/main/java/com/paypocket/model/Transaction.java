@@ -13,15 +13,34 @@ import java.util.UUID;
  */
 public class Transaction {
 
-    private final UUID id;
-    private final UUID walletId;                // кошелек владельца операции
-    private final UUID counterpartyWalletId;    // кошелек контрагента (null если DEPOSIT/WITHDRAW)
-    private final TransactionType type;
-    private final BigDecimal amount;
-    private final String description;            // описание операции (опционально)
-    private final LocalDateTime createdAt;
+    private UUID id;
+    private UUID walletId;                // кошелек владельца операции
+    private UUID counterpartyWalletId;    // кошелек контрагента (null если DEPOSIT/WITHDRAW)
+    private TransactionType type;
+    private BigDecimal amount;
+    private String description;            // описание операции (опционально)
+    private LocalDateTime createdAt;
+
+    /**
+     * Конструктор без аргументов для десериализации.
+     * Не использовать напрямую. Используй {@link Builder}.
+     */
+    @SuppressWarnings("unused")
+    Transaction() {
+        this.id = null;
+        this.walletId = null;
+        this.counterpartyWalletId = null;
+        this.type = null;
+        this.amount = null;
+        this.description = null;
+        this.createdAt = null;
+    }
 
     // Приватный конструктор для создания через Builder
+
+    /**
+     * Конструктор через Builder (основоной).
+     */
     private Transaction(Builder builder) {
         this.id = builder.id;
         this.walletId = builder.walletId;

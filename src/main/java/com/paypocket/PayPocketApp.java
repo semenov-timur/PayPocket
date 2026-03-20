@@ -3,6 +3,7 @@ package com.paypocket;
 import com.paypocket.dto.TransferResult;
 import com.paypocket.exception.*;
 import com.paypocket.model.*;
+import com.paypocket.persistence.JsonDataPersistence;
 import com.paypocket.repository.TransactionRepository;
 import com.paypocket.repository.UserRepository;
 import com.paypocket.repository.WalletRepository;
@@ -14,6 +15,7 @@ import com.paypocket.service.WalletService;
 import com.paypocket.ui.ConsoleUI;
 
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,15 +26,28 @@ import java.util.UUID;
  * и запускает консольный интерфейс.</p>
  */
 public class PayPocketApp {
+
+    private static final String DATA_FILE = "data/paypocket.json";
+
     public static void main(String[] args) {
         UserRepository userRepository = new InMemoryUserRepository();
         WalletRepository walletRepository = new InMemoryWalletRepository();
         TransactionRepository transactionRepository = new InMemoryTransactionRepository();
 
+        JsonDataPersistence persistence = new JsonDataPersistence(Path.of(DATA_FILE));
+        persistence.load(userRepository, walletRepository, transactionRepository);
+
         UserService userService = new UserService(userRepository);
         WalletService walletService = new WalletService(walletRepository, transactionRepository);
 
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Сохранение данных...");
+            persistence.save(userRepository, walletRepository, transactionRepository);
+        }));
+
         ConsoleUI ui = new ConsoleUI(userService, walletService);
         ui.start();
+
+        persistence.save(userRepository, walletRepository, transactionRepository);
     }
 }
