@@ -1,5 +1,7 @@
 package com.paypocket;
 
+import com.paypocket.config.AppConfig;
+import com.paypocket.config.DatabaseConnectionManager;
 import com.paypocket.persistence.JsonDataPersistence;
 import com.paypocket.repository.TransactionRepository;
 import com.paypocket.repository.UserRepository;
@@ -24,6 +26,19 @@ public class PayPocketApp {
     private static final String DATA_FILE = "data/paypocket.json";
 
     public static void main(String[] args) {
+
+        AppConfig config = new AppConfig();
+        DatabaseConnectionManager connectionManager = new DatabaseConnectionManager(config);
+
+        if (connectionManager.testConnection()) {
+            System.out.println("Подключение к PostgreSQL успешно!");
+        }
+        else {
+            System.out.println("Не удалось подключиться к PostgreSQL");
+            return;
+        }
+
+
         UserRepository userRepository = new InMemoryUserRepository();
         WalletRepository walletRepository = new InMemoryWalletRepository();
         TransactionRepository transactionRepository = new InMemoryTransactionRepository();
