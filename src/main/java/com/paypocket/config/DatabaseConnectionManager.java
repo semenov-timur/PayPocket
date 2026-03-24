@@ -1,42 +1,58 @@
 package com.paypocket.config;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * Управление соединениями с базой данных.
+ * Управление соединениями через пул HikariCP.
  *
- * <p>Сейчас создаёт новое соединение при каждом вызове getConnection().
- * На дне 9–10 заменим на пул соединений (HikariCP), который
- * переиспользует открытые соединения — значительно эффективнее.</p>
+ * <p>HikariDataSource при создании открывает несколько TCP-соединений
+ * с PostgreSQL и держит их открытыми. При вызове getConnection()
+ * возвращается уже готовое соединение из пула — мгновенно.</p>
+ *
+ * <p>Когда код вызывает connection.close() внутри try-with-resources,
+ * соединение НЕ закрывается по-настоящему — оно возвращается в пул
+ * для повторного использования. HikariCP подменяет поведение close().</p>
  */
 public class DatabaseConnectionManager {
 
-    private final String url;
-    private final String username;
-    private final String password;
+    private final HikariDataSource dataSource;
 
     public DatabaseConnectionManager(AppConfig config) {
-        url = config.getDbUrl();
-        username = config.getDbUser();
-        password = config.getDbPassword();
+        HikariConfig hikariConfig = new HikariConfig();
+
+        hikariConfig.setJdbcUrl(config.getDbUrl());
+        hikariConfig.setUsername(config.getDbUser());
+        hikariConfig.setPassword(config.getDbPassword());
+
+        hikariConfig.setMaximumPoolSize(10);
+        hikariConfig.setMinimumIdle(2);
+        hikariConfig.setConnectionTimeout(5000);
+        hikariConfig.setIdleTimeout(30000);
+        hikariConfig.setPoolName("PayPocketPool");
+
+        this.dataSource = new HikariDataSource(hikariConfig);
     }
 
     /**
-     * Создает и возвращает новое соединение с БД.
+     * Получает соединение из пула.
      *
-     * <p>ВАЖНО! Вызывающий код обязан закрыть соединение
-     * через try-with-resources, иначе – утечка ресурсов.</p>
+     * <p>Еслисоединение открыто – операция мгновенна.
+     * При вызове close() соединение просто вернется в пул,
+     * а не закроется</p>
      *
-     * @return новое соединение
-     * @throws RuntimeException если подключиться не удалось
+     * @return соединение из пула
+     * @throws RuntimeException если не удалось получить соединение
      */
     public Connection getConnection() {
         try {
-            return DriverManager.getConnection(url, username, password);
+            this.dataSource.getConnection();
         } catch (SQLException e) {
-            throw new RuntimeException("Не удалось подключиться к БД: " + e.getMessage(), e);
+            throw new RuntimeException("Не удалось получить соединение из пула: " + e.getMessage(), e);
         }
     }
 
@@ -46,10 +62,22 @@ public class DatabaseConnectionManager {
      * @return true если подключение успешно
      */
     public boolean testConnection() {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = this.getConnection()) {
             return conn.isValid(5);
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    /**
+     * Закрывает пул соединений. Вызвать при завершении приложения.
+     *
+     * <p>Закроет все TCP-соединения с PostgreSQL.
+     * После вызова getConnection() не будет работать.</p>
+     */
+    public void close() {
+        if (this.dataSource != null && !this.dataSource.isClosed()) {
+            dataSource.close();
         }
     }
 }
