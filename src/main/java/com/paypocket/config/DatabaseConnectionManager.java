@@ -4,7 +4,6 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
@@ -50,7 +49,7 @@ public class DatabaseConnectionManager {
      */
     public Connection getConnection() {
         try {
-            this.dataSource.getConnection();
+            return this.dataSource.getConnection();
         } catch (SQLException e) {
             throw new RuntimeException("Не удалось получить соединение из пула: " + e.getMessage(), e);
         }
