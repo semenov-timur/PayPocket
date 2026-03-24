@@ -12,10 +12,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Хранение пользователей в БД PostgrSQL>.
+ * Хранение пользователей в БД PostgreSQL>.
  *
  * <p>Заменяет {@link com.paypocket.repository.inmemory.InMemoryUserRepository}
- * Реализует тот же интерфейс {@link UserRepository}, плэтому сервисный слой
+ * Реализует тот же интерфейс {@link UserRepository}, поэтому сервисный слой
  * не требует изменений.</p>
  *
  * @see UserRepository
