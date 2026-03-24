@@ -35,12 +35,12 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public User save(User user) {
         String sql = """
-                INSERT INTO users (username, email, password, created_at, updated_at)
+                INSERT INTO users (id, username, email, password, created_at)
                 VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT (id) DO UPDATE SET
                     username = EXCLUDED.USERNAME,
                     email = EXCLUDED.EMAIL,
-                    password = EXCLUDED.PASSWORD,
+                    password = EXCLUDED.PASSWORD
                 """;
 
         try (Connection connection = databaseConnectionManager.getConnection();
@@ -80,7 +80,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public List<User> findAll() {
         String sql = """
-                SELECT * FROM users
+                SELECT * FROM users;
         """;
         List<User> users = new ArrayList<>();
         try (Connection connection = databaseConnectionManager.getConnection();
@@ -133,7 +133,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public long count() {
         String sql = """
-                SELECT COUNT(*) FROM users
+                SELECT COUNT(*) FROM users;
         """;
 
         try (Connection connection = databaseConnectionManager.getConnection();
@@ -155,7 +155,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public Optional<User> findByUsername(String username) {
         String sql = """
-                SELECT * FROM users WHERE LOWER(username) = LOWER(?)
+                SELECT * FROM users WHERE LOWER(username) = LOWER(?);
         """;
 
         try (Connection connection = databaseConnectionManager.getConnection();
@@ -176,7 +176,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public boolean existsByUsername(String username) {
         String sql = """
-                SELECT 1 FROM users WHERE LOWER(username) = LOWER(?)
+                SELECT 1 FROM users WHERE LOWER(username) = LOWER(?);
         """;
 
         try (Connection connection = databaseConnectionManager.getConnection();
@@ -194,7 +194,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public boolean existsByEmail(String email) {
         String sql = """
-                SELECT 1 FROM users WHERE LOWER(email) = LOWER(?)
+                SELECT 1 FROM users WHERE LOWER(email) = LOWER(?);
         """;
 
         try (Connection connection = databaseConnectionManager.getConnection();
@@ -221,7 +221,7 @@ public class JdbcUserRepository implements UserRepository {
      * потому что порядок столбцов в SELECT может меняться.</p>
      */
     private User mapRowToUser(ResultSet rs) throws SQLException {
-        UUID uuid = rs.getObject("uuid", UUID.class);
+        UUID uuid = rs.getObject("id", UUID.class);
         String username = rs.getString("username");
         String email = rs.getString("email");
         String password = rs.getString("password");
