@@ -100,6 +100,7 @@ public class WalletService {
 
         Wallet wallet = getWalletOrThrow(walletId);
         wallet.deposit(amount);
+        walletRepository.save(wallet);
 
         Transaction transaction = new Transaction.Builder(walletId, TransactionType.DEPOSIT, amount)
                 .decscription("Пополнение кошелька")
@@ -129,6 +130,7 @@ public class WalletService {
 
         Wallet wallet = getWalletOrThrow(walletId);
         wallet.withdraw(amount);
+        walletRepository.save(wallet);
 
         Transaction transaction = new Transaction.Builder(walletId, TransactionType.WITHDRAW, amount)
                 .decscription("Снятие средств")
@@ -176,6 +178,7 @@ public class WalletService {
     }
 
         senderWallet.withdraw(amount);
+        walletRepository.save(senderWallet);
 
         Transaction out = new Transaction.Builder(fromWalletId, TransactionType.TRANSACTION_OUT, amount)
                 .counterpartyWalletId(toWalletId)
@@ -185,8 +188,10 @@ public class WalletService {
 
         try {
             receiverWallet.deposit(amount);
+            walletRepository.save(receiverWallet);
         } catch (PayPocketException e) {
             senderWallet.deposit(amount);
+            walletRepository.save(senderWallet);
 
             Transaction in = new Transaction.Builder(fromWalletId, TransactionType.TRANSACTION_IN, amount)
                     .decscription("Перевод не выполнен, средства возвращены.")

@@ -249,7 +249,7 @@ public class ConsoleUI {
         if (amount == null) return;
 
         try {
-            walletService.deposit(wallet.getId(), amount);
+            wallet = walletService.deposit(wallet.getId(), amount);
             BigDecimal newBalance = walletService.getBalance(wallet.getId());
             System.out.printf("Счет пополнен! Баланс: %s %s%n",
                     newBalance,
