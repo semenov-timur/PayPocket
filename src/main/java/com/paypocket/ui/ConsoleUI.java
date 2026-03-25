@@ -201,27 +201,12 @@ public class ConsoleUI {
             name = "Безымянный";
         }
 
-        System.out.println("Доступные валюты:");
-        for (Currency c : Currency.values()) {
-            System.out.printf("  %s – %s (%s)%n",
-                    c.name(),
-                    c.getDescription(),
-                    c.getSymbol()
-            );
-        }
-
-        String currencyInput = readString("Валюта [по умолчанию RUB]: ");
         Currency currency;
-        if (currencyInput.isBlank()) {
-            currency = Currency.RUB;
-        }
-        else {
-            currencyInput = currencyInput.toUpperCase();
-            currency = Currency.fromString(currencyInput);
-            if (currency == null) {
-                System.out.println("Неизвестная валюта: " + currencyInput);
-                return;
-            }
+        try {
+            currency = selectCurrency("Доступные валюты:");
+        } catch (RuntimeException e) {
+            System.out.println(e.getMessage());
+            return;
         }
 
         try {
@@ -271,15 +256,8 @@ public class ConsoleUI {
                 senderWallet.getCurrency()
         );
 
-        String recipientUsername = readString("Username получателя: ");
-
-        User recipient;
-        try {
-            recipient = userService.getByUsername(recipientUsername);
-        } catch (PayPocketException e) {
-            System.out.println("Ошибка: " + e.getMessage());
-            return;
-        }
+        User recipient = selectUser("Выберите получателя: ");
+        if (recipient == null) return;
 
         List<Wallet> recipientWallets = walletService.getUserWallets(recipient.getId());
         if (recipientWallets.isEmpty()) {
@@ -328,7 +306,7 @@ public class ConsoleUI {
         if (amount == null) return;
 
         System.out.printf("Перевести %s %s пользователю %s? (да/нет): ",
-                amount, senderWallet.getCurrency(), recipientUsername);
+                amount, senderWallet.getCurrency(), recipient.getUsername());
         String comfirm = readString("").toLowerCase();
 
         if (!comfirm.equals("да") && !comfirm.equals("yes") && !comfirm.equals("y")) {
@@ -441,6 +419,61 @@ public class ConsoleUI {
         return wallets.get(choice);
     }
 
+    private User selectUser(String prompt) {
+        List<User> users = userService.getAllUsers();
+        if (users.isEmpty()) {
+            System.out.println("\nСейчас нет доступных пользователей.");
+            return null;
+        }
+
+        System.out.println(prompt + ":");
+        for (int i   = 0; i < users.size(); i++) {
+            User user = users.get(i);
+            System.out.printf("   %d. %s%n",
+                    i + 1,
+                    user.getUsername()
+            );
+        }
+
+        int choice = readInt("Номер пользователя: ") - 1;
+        if (choice < 0 || choice >= users.size()) {
+            System.out.println("Некорректный выбор.");
+            return null;
+        }
+
+        return users.get(choice);
+    }
+
+    private Currency selectCurrency(String prompt) {
+        System.out.println("Доступные валюты:");
+
+        for (Currency c : Currency.values()) {
+            System.out.printf("   %d. %s – %s (%s)%n",
+                    c.ordinal() + 1,
+                    c.name(),
+                    c.getDescription(),
+                    c.getSymbol()
+            );
+        }
+
+        int choice = readInt("Выберите валюту: ");
+
+        switch (choice) {
+            case 1 -> {
+                return  Currency.RUB;
+            }
+            case 2 -> {
+                return  Currency.USD;
+            }
+            case 3 -> {
+                return  Currency.EUR;
+            }
+            default -> {
+                throw new RuntimeException("Неверный выбор.");
+            }
+        }
+    }
+
     /**
      * Читает строку из консоли.
      */
@@ -467,7 +500,13 @@ public class ConsoleUI {
     private BigDecimal readAmount(String prompt) {
         System.out.print(prompt);
         try {
-            BigDecimal amount = new BigDecimal(scanner.nextLine().trim());
+            String input = scanner.nextLine().replace(',', '.').trim();
+            if (input.length() > 21) {
+                System.out.println("Сумма слишком большая!");
+                return null;
+            }
+            BigDecimal amount = new BigDecimal(input);
+
             if  (amount.compareTo(BigDecimal.ZERO) <= 0) {
                 System.out.println("Сумма должна быть больше нуля.");
                 return null;
