@@ -11,6 +11,8 @@ import com.paypocket.repository.TransactionRepository;
 import com.paypocket.repository.WalletRepository;
 import com.paypocket.repository.jdbc.JdbcTransactionRepository;
 import com.paypocket.repository.jdbc.JdbcWalletRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -35,9 +37,11 @@ import java.util.UUID;
  */
 public class WalletService {
 
-    private WalletRepository walletRepository;
-    private TransactionRepository transactionRepository;
+    private final WalletRepository walletRepository;
+    private final TransactionRepository transactionRepository;
     private final DatabaseConnectionManager connectionManager;
+
+    private final Logger log = LoggerFactory.getLogger(WalletService.class);
 
     /**
      * Конструктор с внедрением зависимостей для Jdbc-режима.
@@ -74,8 +78,10 @@ public class WalletService {
            throw new WalletAlreadyExistsException(currency);
        }
 
-        Wallet wallet = new Wallet(userId, name, currency);
-        return walletRepository.save(wallet);
+       Wallet wallet = new Wallet(userId, name, currency);
+       walletRepository.save(wallet);
+       log.info("Wallet created: id – {}, userId – {}, name – {}, currency – {}", wallet.getId(), userId, name, currency);
+       return wallet;
     }
 
     /**
@@ -116,6 +122,7 @@ public class WalletService {
                 .build();
         transactionRepository.save(transaction);
 
+        log.info("Deposit: walletId – {}, amount – {}", walletId, amount);
         return wallet;
     }
 
@@ -146,6 +153,7 @@ public class WalletService {
                 .build();
         transactionRepository.save(transaction);
 
+        log.info("Withdraw: walletId - {}, amount – {}", walletId, amount);
         return  wallet;
     }
 
@@ -219,6 +227,9 @@ public class WalletService {
 
             connection.commit();
 
+            log.info("Transfer: {} → {}, amount={}, senderBalance={}, receiverBalance={}",
+                    fromWalletId, toWalletId, amount, senderNewBalance, receiverNewBalance);
+
             return new TransferResult(
                     fromWalletId,
                     toWalletId,
@@ -228,9 +239,11 @@ public class WalletService {
 
         } catch (SQLException e) {
             safeRollback(connection);
+            log.error("Transfer DB error: {} → {}, amount={}", fromWalletId, toWalletId, amount, e);
             throw new RuntimeException("Ошибка БД при переводе: " + e.getMessage(), e);
         } catch (PayPocketException e) {
             safeRollback(connection);
+            log.warn("Transfer rejected: {} → {}, amount={}, reason={}",fromWalletId, toWalletId, amount, e.getMessage());
             throw e;
         } finally {
             safeClose(connection);

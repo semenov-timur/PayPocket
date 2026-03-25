@@ -4,6 +4,8 @@ import com.paypocket.exception.DuplicateUserException;
 import com.paypocket.exception.UserNotFoundException;
 import com.paypocket.model.User;
 import com.paypocket.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +19,8 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     /**
      * Конструктор с внедрением зависимости (DI - dependency injection).
@@ -48,16 +52,20 @@ public class UserService {
 
         // Проверка уникальности
         if (userRepository.existsByUsername(username)) {
+            log.warn("Registration taken – username taken: {}", username);
             throw new DuplicateUserException("username",  username);
         }
         else if (userRepository.existsByEmail(email)) {
+            log.warn("Registration taken – email taken: {}", email);
             throw new DuplicateUserException("email",  email);
         }
 
         // Создание и сохранение
         // TODO: хэширование паролей
         User user = new User(username, email, password);
-        return userRepository.save(user);
+        userRepository.save(user);
+        log.info("User registered successfully: username – {}, id – {}", username, user.getId());
+        return user;
     }
 
     /**
@@ -71,9 +79,13 @@ public class UserService {
      */
     public User authenticate(String username, String password) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException(username));
+                .orElseThrow(() -> {
+                    log.warn("Auth failed – user not found: {}", username);
+                    return new UserNotFoundException(username);
+                } );
 
         if  (!user.getPassword().equals(password)) {
+            log.warn("Auth failed – wrong password: username – {}", username);
             throw new IllegalArgumentException("Неверный пароль!");
         }
 
