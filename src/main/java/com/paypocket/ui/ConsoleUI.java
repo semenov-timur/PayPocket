@@ -340,7 +340,7 @@ public class ConsoleUI {
             TransferResult result = walletService.transfer(senderWallet.getId(), recieverWallet.getId(), amount);
             System.out.println("Перевод выполнен!");
             System.out.printf("Ваш баланс: %s %s%n",
-                    senderWallet.getBalance(),
+                    walletService.getWallet(senderWallet.getId()).getBalance(),
                     senderWallet.getCurrency()
             );
         } catch (PayPocketException e) {
