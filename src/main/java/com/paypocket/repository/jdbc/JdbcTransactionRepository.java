@@ -67,6 +67,37 @@ public class JdbcTransactionRepository implements TransactionRepository {
         }
     }
 
+    /**
+     * Сохраняет транзакцию в рамках текущего соединения (транзакции).
+     *
+     * @param conn          соединение с активной транзакцией
+     * @param transaction   транзакция для сохранения
+     */
+    public void save(Connection conn, Transaction transaction) throws SQLException {
+        String sql = """
+                INSERT INTO transactions
+                    (id, wallet_id, counterparty_wallet_id, type, amount, description, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+        """;
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setObject(1, transaction.getId());
+            stmt.setObject(2, transaction.getWalletId());
+            if (transaction.getCounterpartyWalletId() != null) {
+                stmt.setObject(3, transaction.getCounterpartyWalletId());
+            }
+            else {
+                stmt.setNull(3, Types.OTHER);
+            }
+            stmt.setString(4, transaction.getType().name());
+            stmt.setBigDecimal(5, transaction.getAmount());
+            stmt.setString(6, transaction.getDescription());
+            stmt.setTimestamp(7, Timestamp.valueOf(transaction.getCreatedAt()));
+
+            stmt.executeUpdate();
+        }
+    }
+
     @Override
     public Optional<Transaction> findById(UUID id) {
         String sql = """

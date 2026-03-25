@@ -82,6 +82,31 @@ public class JdbcWalletRepository implements WalletRepository {
         }
     }
 
+    /**
+     * Находит кошелек с блокирровкой строки (SELECT FOR UPDATE).
+     * Используется внутри транзакции для предотвращения
+     * конкурентных изменений баланса.
+     *
+     * @param conn соединение с активной транзакцией
+     * @param walletId id кошелька
+     * @return найденный кошелек или пустой Optional
+     */
+    public Optional<Wallet> findByIdForUpdate(Connection conn, UUID walletId) throws SQLException {
+        String sql = """
+                SELECT * FROM wallets WHERE id = ?;
+                """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setObject(1, walletId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRowsToWallet(rs));
+                }
+                return Optional.empty();
+            }
+        }
+    }
+
     @Override
     public List<Wallet> findAll() {
         String sql = """
@@ -170,6 +195,24 @@ public class JdbcWalletRepository implements WalletRepository {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Ошибка при поиске кошельков пользователя: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Обновляет баланс кошелька в рамках существующей транзакции.
+     *
+     * @param conn соединение с активной транзакцией
+     * @param walletId id кошелька
+     * @param newBalance обновлненный баланс
+     */
+    public void updateBalance(Connection conn, UUID walletId, BigDecimal newBalance) throws SQLException {
+        String sql = """
+                UPDATE wallets SET balance = ? WHERE id = ?;
+        """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setBigDecimal(1, newBalance);
+            stmt.setObject(2, walletId);
+            stmt.executeUpdate();
         }
     }
 
