@@ -2,21 +2,15 @@ package com.paypocket;
 
 import com.paypocket.config.AppConfig;
 import com.paypocket.config.DatabaseConnectionManager;
-import com.paypocket.persistence.JsonDataPersistence;
 import com.paypocket.repository.TransactionRepository;
 import com.paypocket.repository.UserRepository;
 import com.paypocket.repository.WalletRepository;
-import com.paypocket.repository.inmemory.InMemoryTransactionRepository;
-import com.paypocket.repository.inmemory.InMemoryUserRepository;
-import com.paypocket.repository.inmemory.InMemoryWalletRepository;
 import com.paypocket.repository.jdbc.JdbcTransactionRepository;
 import com.paypocket.repository.jdbc.JdbcUserRepository;
 import com.paypocket.repository.jdbc.JdbcWalletRepository;
 import com.paypocket.service.UserService;
 import com.paypocket.service.WalletService;
 import com.paypocket.ui.ConsoleUI;
-
-import java.nio.file.Path;
 
 /**
  * Точка входа в приложние PayPocket.
@@ -45,7 +39,7 @@ public class PayPocketApp {
         TransactionRepository transactionRepository = new JdbcTransactionRepository(connectionManager);
 
         UserService userService = new UserService(userRepository);
-        WalletService walletService = new WalletService(walletRepository, transactionRepository);
+        WalletService walletService = new WalletService(walletRepository, transactionRepository, connectionManager);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\nЗакрытие соединений с БД...");

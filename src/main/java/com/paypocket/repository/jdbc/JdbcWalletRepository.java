@@ -91,6 +91,7 @@ public class JdbcWalletRepository implements WalletRepository {
      * @param walletId id кошелька
      * @return найденный кошелек или пустой Optional
      */
+    @Override
     public Optional<Wallet> findByIdForUpdate(Connection conn, UUID walletId) throws SQLException {
         String sql = """
                 SELECT * FROM wallets WHERE id = ?;

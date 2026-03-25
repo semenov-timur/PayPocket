@@ -3,6 +3,8 @@ package com.paypocket.repository;
 import com.paypocket.model.Transaction;
 import com.paypocket.model.TransactionType;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,4 +31,12 @@ public interface TransactionRepository extends Repository<Transaction, UUID> {
      * @return отфильтрованный список транзакций кошелька
      */
     List<Transaction> findByWalletIdAndType(UUID walletId, TransactionType type);
+
+    /**
+     * Сохраняет транзакцию в рамках существующего соединения/транзакции.
+     *
+     * @param conn        соединение с активной транзакцией
+     * @param transaction транзакция для сохранения
+     */
+    public void save(Connection conn, Transaction transaction) throws SQLException;
 }

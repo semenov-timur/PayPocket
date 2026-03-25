@@ -18,7 +18,7 @@ import java.util.UUID;
 /**
  * Хранение транзакций в БД PostgreSQL.
  *
- * <p>Заменяет {@link com.paypocket.repository.inmemory.InMemoryTransactionRepository}
+ * <p>Заменяет InMemoryTransactionRepository.
  *  Реализует тот же интерфейс {@link TransactionRepository}, поэтому сервисный слой
  *  не требует изменений.</p>
  *
