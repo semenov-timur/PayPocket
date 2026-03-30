@@ -301,6 +301,19 @@ public class WalletService {
     }
 
     /**
+     * Возвращает историю операций кошелька с пагинацией.
+     *
+     * @param walletId id кошелька
+     * @return список операций
+     * @throws WalletNotFoundException если кошелек не найден
+     */
+    public List<Transaction> getTransactionHistory(UUID walletId, int pageNumber, int pageSize) {
+        // проверяем, что кошелек существует
+        getWalletOrThrow(walletId);
+        return this.transactionRepository.findByWalletId(walletId, pageNumber, pageSize);
+    }
+
+    /**
      * Возвращает историю операций кошелька определенного типа.
      *
      * @param walletId id кошелька

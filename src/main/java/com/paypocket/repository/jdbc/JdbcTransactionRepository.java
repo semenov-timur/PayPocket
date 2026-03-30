@@ -117,7 +117,33 @@ public class JdbcTransactionRepository extends AbstractJdbcRepository<Transactio
                 return transactions;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка : " + e.getMessage(), e);
+            throw new RuntimeException("Ошибка при получении списка транзакций: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<Transaction> findByWalletId(UUID walletId, int pageNumber, int pageSize) {
+        String sql = """
+                SELECT * FROM transactions
+                WHERE wallet_id = ?
+                ORDER BY created_at DESC
+                LIMIT ? OFFSET ?;
+                """;
+        int offset = (pageNumber - 1) * pageSize;
+        List<Transaction> transactions = new ArrayList<>();
+        try (Connection connection = databaseConnectionManager.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setObject(1, walletId);
+            stmt.setInt(2, pageSize);
+            stmt.setInt(3, offset);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    transactions.add(mapRow(rs));
+                }
+                return transactions;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка получения страницы транзакций: " + e.getMessage(), e);
         }
     }
 
@@ -138,7 +164,7 @@ public class JdbcTransactionRepository extends AbstractJdbcRepository<Transactio
                 return transactions;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка : " + e.getMessage(), e);
+            throw new RuntimeException("Ошибка получения транзакций типа " + type.name() +  ": " + e.getMessage(), e);
         }
     }
 
@@ -161,7 +187,7 @@ public class JdbcTransactionRepository extends AbstractJdbcRepository<Transactio
                 return transactions;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка : " + e.getMessage(), e);
+            throw new RuntimeException("Ошибка получения транзакций пользователя: " + e.getMessage(), e);
         }
     }
 

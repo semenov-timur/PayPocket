@@ -353,29 +353,50 @@ public class ConsoleUI {
         Wallet wallet = selectWallet("Выберите кошелек");
         if (wallet == null) return;
 
-        List<Transaction> history = walletService.getTransactionHistory(wallet.getId());
-        if (history.isEmpty()) {
-            System.out.println("Операций пока нет.");
-            return;
+        int pageNumber = 1;
+        int pageSize = 10;
+
+        while (true) {
+            List<Transaction> history = walletService.getTransactionHistory(wallet.getId(),  pageNumber, pageSize);
+            if (history.isEmpty() && pageNumber == 1) {
+                System.out.println("Операций пока нет.");
+                return;
+            }
+
+            if (history.isEmpty()) {
+                System.out.println("Операций больше нет.");
+                return;
+            }
+
+            System.out.printf("%n––– Страница %d –––%n", pageNumber);
+            System.out.printf("%-4s %-16s %18s %-6s %-20s %s%n",
+                    "№", "Тип", "Сумма", "Валюта", "Дата", "Описание");
+            System.out.println("–".repeat(81));
+            int startNum = (pageNumber - 1) * pageSize + 1;
+            for (int i  = 0; i < history.size(); i++) {
+                Transaction transaction = history.get(i);
+                System.out.printf("%-4d %-16s %18s %-6s %-20s %s%n",
+                        startNum + i,
+                        transaction.getType(),
+                        transaction.getAmount(),
+                        wallet.getCurrency(),
+                        transaction.getCreatedAt().format(DATE_TIME_FORMAT),
+                        transaction.getDescription() != null ? transaction.getDescription() : ""
+                );
+            }
+
+            if (history.size() < pageSize) {
+                System.out.println("\nЭто все операции");
+                return;
+            }
+
+            System.out.print("\nДальше? (да/нет): ");
+            String input = scanner.nextLine().trim().toLowerCase();
+            if (input.equals("да") || input.equals("yes") || input.equals("y")) {
+                pageNumber += 1;
+            }
+            else return;
         }
-
-        System.out.printf("%n%-4s %-16s %12s %-6s %-20s %s%n",
-                "№", "Тип", "Сумма", "Валюта", "Дата", "Описание");
-        System.out.println("–".repeat(75));
-
-        for (int i  = 0; i < history.size(); i++) {
-            Transaction transaction = history.get(i);
-            System.out.printf("%-4d %-16s %12s %-6s %-20s %s%n",
-                    i + 1,
-                    transaction.getType(),
-                    transaction.getAmount(),
-                    wallet.getCurrency(),
-                    transaction.getCreatedAt().format(DATE_TIME_FORMAT),
-                    transaction.getDescription() != null ? transaction.getDescription() : ""
-            );
-        }
-
-        System.out.printf("%nВсего операций: %d%n", history.size());
     }
 
     // ===========================================

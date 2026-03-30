@@ -24,6 +24,16 @@ public interface TransactionRepository extends Repository<Transaction, UUID> {
     List<Transaction> findByWalletId(UUID walletId);
 
     /**
+     * Находит транзакции кошелька с пагинацией.
+     *
+     * @param walletId      id кошелька
+     * @param pageNumber    номер страницы начиная с 1
+     * @param pageSize      кол-во записей на странице
+     * @return  страница транзакций
+     */
+    List<Transaction> findByWalletId(UUID walletId, int pageNumber, int pageSize);
+
+    /**
      * Находит транзакции кошелька определенного типа.
      *
      * @param walletId  id кошелька
