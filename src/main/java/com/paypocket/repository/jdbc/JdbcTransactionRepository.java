@@ -5,14 +5,10 @@ import com.paypocket.model.Transaction;
 import com.paypocket.model.TransactionType;
 import com.paypocket.repository.TransactionRepository;
 import com.paypocket.repository.UserRepository;
-import com.paypocket.repository.WalletRepository;
 
-import java.math.BigDecimal;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -24,16 +20,19 @@ import java.util.UUID;
  *
  * @see UserRepository
  */
-public class JdbcTransactionRepository implements TransactionRepository {
+public class JdbcTransactionRepository extends AbstractJdbcRepository<Transaction> implements TransactionRepository {
 
-    private final DatabaseConnectionManager connectionManager;
+    public JdbcTransactionRepository(DatabaseConnectionManager databaseConnectionManager) {
+        super(databaseConnectionManager);
+    }
 
-    public JdbcTransactionRepository(DatabaseConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    @Override
+    protected String getTableName() {
+        return "transactions";
     }
 
     // ======================================================
-    // CRUD - базовые операции
+    // CRUD - операции
     // ======================================================
 
     @Override
@@ -45,7 +44,7 @@ public class JdbcTransactionRepository implements TransactionRepository {
                 ON CONFLICT (id) DO NOTHING
                 """;
 
-        try (Connection connection = connectionManager.getConnection();
+        try (Connection connection = databaseConnectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setObject(1, transaction.getId());
             stmt.setObject(2, transaction.getWalletId());
@@ -98,91 +97,6 @@ public class JdbcTransactionRepository implements TransactionRepository {
         }
     }
 
-    @Override
-    public Optional<Transaction> findById(UUID id) {
-        String sql = """
-                SELECT * FROM transactions WHERE id = ?;
-                """;
-
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setObject(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapRowToTransaction(rs));
-                }
-                return Optional.empty();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка при поиске транзакции: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public List<Transaction> findAll() {
-        String sql = """
-                SELECT * FROM transactions ORDER BY created_at DESC;
-                """;
-        List<Transaction> transactions = new ArrayList<>();
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                transactions.add(mapRowToTransaction(rs));
-            }
-            return transactions;
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка получения списка транзакций: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public boolean existsById(UUID id) {
-        String sql = """
-                SELECT 1 FROM transactions WHERE id = ?;
-                """;
-
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setObject(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка при проверке существования транзакции: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public void deleteById(UUID id) {
-        String sql = """
-                REMOVE FROM transactions WHERE id = ?;
-                """;
-
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setObject(1, id);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка при удалении транзакции: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public long count() {
-        String sql = """
-                SELECT COUNT(*) FROM transactions;
-                """;
-
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            return (rs.next() ? rs.getLong(1) : 0);
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка при подсчете транзакций: " + e.getMessage(), e);
-        }
-    }
-
     // ================================================================
     // Специфичные методы TransactionRepository
     // ================================================================
@@ -193,12 +107,12 @@ public class JdbcTransactionRepository implements TransactionRepository {
                 SELECT * FROM transactions WHERE wallet_id = ? ORDER BY created_at DESC;
                 """;
         List<Transaction> transactions = new ArrayList<>();
-        try (Connection connection = connectionManager.getConnection();
+        try (Connection connection = databaseConnectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setObject(1, walletId);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    transactions.add(mapRowToTransaction(rs));
+                    transactions.add(mapRow(rs));
                 }
                 return transactions;
             }
@@ -213,13 +127,13 @@ public class JdbcTransactionRepository implements TransactionRepository {
                 SELECT * FROM transactions WHERE wallet_id = ? AND type = ? ORDER BY created_at DESC;
                 """;
         List<Transaction> transactions = new ArrayList<>();
-        try (Connection connection = connectionManager.getConnection();
+        try (Connection connection = databaseConnectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setObject(1, walletId);
             stmt.setString(2, type.name());
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    transactions.add(mapRowToTransaction(rs));
+                    transactions.add(mapRow(rs));
                 }
                 return transactions;
             }
@@ -237,12 +151,12 @@ public class JdbcTransactionRepository implements TransactionRepository {
                 ORDER BY t.created_at DESC
                 """;
         List<Transaction> transactions = new ArrayList<>();
-        try (Connection connection = connectionManager.getConnection();
+        try (Connection connection = databaseConnectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setObject(1, username);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    transactions.add(mapRowToTransaction(rs));
+                    transactions.add(mapRow(rs));
                 }
                 return transactions;
             }
@@ -262,20 +176,16 @@ public class JdbcTransactionRepository implements TransactionRepository {
      * Столбцы читаются по имени (не по номеру) — так надёжнее,
      * потому что порядок столбцов в SELECT может меняться.</p>
      */
-    private Transaction mapRowToTransaction(ResultSet rs) throws SQLException {
-        UUID id = rs.getObject("id", UUID.class);
-        UUID walletId = rs.getObject("wallet_id", UUID.class);
-        UUID counterpartyWalletId = rs.getObject("counterparty_wallet_id", UUID.class);
-        TransactionType type = TransactionType.valueOf(rs.getString("type"));
-        BigDecimal amount = rs.getBigDecimal("amount");
-        String description = rs.getString("description");
-        LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
-
-        return new Transaction.Builder(walletId, type, amount)
-                .id(id)
-                .counterpartyWalletId(counterpartyWalletId)
-                .decscription(description)
-                .createdAt(createdAt)
+    @Override
+    protected Transaction mapRow(ResultSet rs) throws SQLException {
+        return new Transaction.Builder(
+                rs.getObject("wallet_id", UUID.class),
+                TransactionType.valueOf(rs.getString("type")),
+                rs.getBigDecimal("amount"))
+                .id(rs.getObject("id", UUID.class))
+                .counterpartyWalletId(rs.getObject("counterparty_wallet_id", UUID.class))
+                .decscription(rs.getString("description"))
+                .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
                 .build();
     }
 }

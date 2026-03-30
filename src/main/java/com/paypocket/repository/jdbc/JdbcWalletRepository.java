@@ -8,7 +8,6 @@ import com.paypocket.repository.WalletRepository;
 
 import java.math.BigDecimal;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -17,22 +16,25 @@ import java.util.UUID;
 /**
  * Хранение кошельков в БД PostgreSQL.
  *
- * <p>Заменяет {@link com.paypocket.repository.inmemory.InMemoryWalletRepository}
+ * <p>Заменяет InMemoryWalletRepository.
  *  Реализует тот же интерфейс {@link WalletRepository}, поэтому сервисный слой
  *  не требует изменений.</p>
  *
  * @see UserRepository
  */
-public class JdbcWalletRepository implements WalletRepository {
+public class JdbcWalletRepository extends AbstractJdbcRepository<Wallet> implements WalletRepository {
 
-    private final DatabaseConnectionManager connectionManager;
+    public  JdbcWalletRepository(DatabaseConnectionManager databaseConnectionManager) {
+        super(databaseConnectionManager);
+    }
 
-    public  JdbcWalletRepository(DatabaseConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    @Override
+    protected String getTableName() {
+        return "wallets";
     }
 
     // ======================================================
-    // CRUD - базовые операции
+    // CRUD - операции
     // ======================================================
 
     @Override
@@ -45,7 +47,7 @@ public class JdbcWalletRepository implements WalletRepository {
                     balance = EXCLUDED.balance
                 """;
 
-        try (Connection connection = connectionManager.getConnection();
+        try (Connection connection = databaseConnectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
 
             stmt.setObject(1, wallet.getId());
@@ -59,26 +61,6 @@ public class JdbcWalletRepository implements WalletRepository {
             return wallet;
         } catch (SQLException e) {
             throw new RuntimeException("Ошибка сохранения кошелька: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public Optional<Wallet> findById(UUID id) {
-        String sql = """
-                SELECT * FROM wallets WHERE id = ?;
-                """;
-
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setObject(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapRowsToWallet(rs));
-                }
-                return Optional.empty();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка поиска кошелька: " + e.getMessage(), e);
         }
     }
 
@@ -101,77 +83,10 @@ public class JdbcWalletRepository implements WalletRepository {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(mapRowsToWallet(rs));
+                    return Optional.of(mapRow(rs));
                 }
                 return Optional.empty();
             }
-        }
-    }
-
-    @Override
-    public List<Wallet> findAll() {
-        String sql = """
-                SELECT * FROM wallets;
-                """;
-        List<Wallet> wallets = new ArrayList<>();
-
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            try  (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    wallets.add(mapRowsToWallet(rs));
-                }
-                return wallets;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка получения списка кошельков: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public boolean existsById(UUID id) {
-        String sql = """
-                SELECT 1 FROM wallets WHERE id = ?;
-                """;
-
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setObject(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка при проверке существования кошелька: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public void deleteById(UUID id) {
-        String sql = """
-                DELETE FROM wallets WHERE id = ?;
-                """;
-
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setObject(1, id);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка при удалении кошелька: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public long count() {
-        String sql = """
-                SELECT COUNT(*) FROM wallets;
-                """;
-
-        try (Connection connection = connectionManager.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            return (rs.next() ? rs.getLong(1) : 0);
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка при подсчёте кошельков: " + e.getMessage(), e);
         }
     }
 
@@ -185,12 +100,12 @@ public class JdbcWalletRepository implements WalletRepository {
                 SELECT * FROM wallets WHERE user_id = ?;
                 """;
         List<Wallet> wallets = new ArrayList<>();
-        try (Connection connection = connectionManager.getConnection();
+        try (Connection connection = databaseConnectionManager.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setObject(1, userId);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    wallets.add(mapRowsToWallet(rs));
+                    wallets.add(mapRow(rs));
                 }
                 return wallets;
             }
@@ -228,14 +143,15 @@ public class JdbcWalletRepository implements WalletRepository {
      * Столбцы читаются по имени (не по номеру) — так надёжнее,
      * потому что порядок столбцов в SELECT может меняться.</p>
      */
-    private Wallet mapRowsToWallet(ResultSet rs) throws SQLException {
-        UUID id = rs.getObject("id", UUID.class);
-        UUID  userId = rs.getObject("user_id", UUID.class);
-        String name = rs.getString("name");
-        BigDecimal balance = rs.getBigDecimal("balance");
-        Currency currency = Currency.valueOf(rs.getString("currency"));
-        LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
-
-        return new Wallet(id, userId, name, balance, currency, createdAt);
+    @Override
+    protected Wallet mapRow(ResultSet rs) throws SQLException {
+        return new Wallet(
+                rs.getObject("id", UUID.class),
+                rs.getObject("user_id", UUID.class),
+                rs.getString("name"),
+                rs.getBigDecimal("balance"),
+                Currency.valueOf(rs.getString("currency")),
+                rs.getTimestamp("created_at").toLocalDateTime()
+        );
     }
 }
