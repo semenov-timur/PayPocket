@@ -9,8 +9,6 @@ import com.paypocket.model.TransactionType;
 import com.paypocket.model.Wallet;
 import com.paypocket.repository.TransactionRepository;
 import com.paypocket.repository.WalletRepository;
-import com.paypocket.repository.jdbc.JdbcTransactionRepository;
-import com.paypocket.repository.jdbc.JdbcWalletRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

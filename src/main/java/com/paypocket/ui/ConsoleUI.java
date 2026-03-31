@@ -336,7 +336,7 @@ public class ConsoleUI {
         if (amount == null) return;
 
         try {
-            walletService.withdraw(wallet.getId(), amount);
+            wallet = walletService.withdraw(wallet.getId(), amount);
             BigDecimal newBalance = walletService.getBalance(wallet.getId());
             System.out.printf("Средства сняты! Баланс: %s %s%n",
                     newBalance,
@@ -354,7 +354,7 @@ public class ConsoleUI {
         if (wallet == null) return;
 
         int pageNumber = 1;
-        int pageSize = 10;
+        int pageSize = 5;
 
         while (true) {
             List<Transaction> history = walletService.getTransactionHistory(wallet.getId(),  pageNumber, pageSize);
