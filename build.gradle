@@ -1,10 +1,18 @@
 plugins {
     id 'java'
     id 'application'
+    id 'org.springframework.boot' version '4.0.5'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.paypocket'
 version = '1.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 repositories {
     mavenCentral()
@@ -13,15 +21,23 @@ repositories {
 dependencies {
     implementation 'com.google.code.gson:gson:2.11.0'
     implementation 'org.postgresql:postgresql:42.7.7'
-
-    implementation 'com.zaxxer:HikariCP:5.1.0'
-    implementation 'org.slf4j:slf4j-simple:2.0.16'
-
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
+
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'org.postgresql:postgresql'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-thymeleaf-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 application {
-    mainClass = 'com.paypocket.PayPocketApp'
+    mainClass = 'com.paypocket.PayPocketApplication'
 }
 
 test {

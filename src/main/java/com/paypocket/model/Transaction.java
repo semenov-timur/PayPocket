@@ -1,5 +1,7 @@
 package com.paypocket.model;
 
+import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -11,30 +13,34 @@ import java.util.UUID;
  * Транзакция – иммутабельный объект, после создание не меняется.
  * Все поля – private final, нет сеттеров. Создается через {@link Builder}.
  */
+@Entity
+@Table(name = "transactions")
 public class Transaction {
 
+    @Id
+    @Column(name = "id")
     private UUID id;
+
+    @Column(name = "wallet_id",  nullable = false)
     private UUID walletId;                // кошелек владельца операции
+
+    @Column(name = "counterparty_wallet_id")
     private UUID counterpartyWalletId;    // кошелек контрагента (null если DEPOSIT/WITHDRAW)
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false, length = 20)
     private TransactionType type;
+
+    @Column(name = "amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
+
+    @Column(name = "description")
     private String description;            // описание операции (опционально)
+
+    @Column(name = "created_at",  nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /**
-     * Конструктор без аргументов для десериализации.
-     * Не использовать напрямую. Используй {@link Builder}.
-     */
-    @SuppressWarnings("unused")
-    Transaction() {
-        this.id = null;
-        this.walletId = null;
-        this.counterpartyWalletId = null;
-        this.type = null;
-        this.amount = null;
-        this.description = null;
-        this.createdAt = null;
-    }
+    protected Transaction() {}
 
     // Приватный конструктор для создания через Builder
 

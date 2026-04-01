@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/paypocket
+    username: postgres
+    password: postgres
+    # HikariCP настраивается автоматически Spring Boot
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      # validate — проверяет, что таблицы в БД соответствуют Entity
+      # update — автоматически создаёт/обновляет таблицы (удобно для разработки)
+      # create-drop — создаёт при запуске, удаляет при остановке (для тестов)
+      # none — ничего не делает
+    show-sql: true
+    # show-sql: true — выводит SQL-запросы Hibernate в консоль (для отладки)
+    properties:
+      hibernate:
+        format_sql: true
+        # format_sql — форматирует SQL красиво, с отступами
+
+  # Flyway — автоматические миграции (подключим позже)
+  # flyway:
+  #   enabled: true
+  #   locations: classpath:db/migration
+
+server:
+  port: 8080

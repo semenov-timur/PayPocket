@@ -1,5 +1,10 @@
 package com.paypocket.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
@@ -11,13 +16,29 @@ import java.util.UUID;
  * Имя пользователя и e-mail также должны быть уникальными в системе –
  * однако это проверяется на сервиса/БД, а не в самой модели пользователя.
  */
+@Entity
+@Table(name = "users")
 public class User {
-
+    @Id
+    @Column(name = "id")
     private UUID id;                  // final – идентификатор не изменяется после создания
+
+    @Column(name = "username", unique = true,  nullable = false, length = 50)
     private String username;
+
+    @Column(name = "email", unique = true,  nullable = false, length = 50)
     private String email;
+
+    @Column(name = "password", nullable = false)
     private String password;                // TODO: в дальнейшем хранить хэш
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    /**
+     * Конструктор без аргументов – для JPA / Hibernate.
+     */
+    protected User() {}
 
     /**
      * Конструктор для создания НОВОГО пользователя.
@@ -42,11 +63,6 @@ public class User {
         this.password = password;
         this.createdAt = createdAt;
     }
-
-    /**
-     * Конструктор без аргументов для десериализации.
-     */
-    User() {}
 
     // ––– Геттеры –––
 

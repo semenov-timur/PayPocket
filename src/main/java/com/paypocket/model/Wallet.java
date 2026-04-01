@@ -2,6 +2,7 @@ package com.paypocket.model;
 
 import com.paypocket.exception.InsufficientFundsException;
 import com.paypocket.exception.InvalidAmountException;
+import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,16 +16,36 @@ import java.util.UUID;
  * Изменение баланса доступно только через контролируемые методы – withdraw() и deposit(),
  * а не через публичный сеттер.
  */
+@Entity
+@Table(name = "wallets")
 public class Wallet {
 
+    @Id
+    @Column(name = "id")
     private UUID id;
+
+    @Column(name = "user_id", nullable = false)
     private UUID userId;              // к какому пользователю привязан
+
+    @Column(name = "name", nullable = false, length = 100)
     private String name;                    // "Основной", "Копилка" и т.д.
+
+    @Column(name = "balance", nullable = false, precision = 19, scale = 2)
     private BigDecimal balance;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency",  nullable = false,  length = 3)
     private Currency currency;          // "RUB" по умолчанию
+
+    @Column(name = "created_at",  nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     // ––– Конструкторы –––
+
+    /**
+     * Конструктор без аргументов.
+     */
+    protected Wallet() {}
 
     /**
      * Создание НОВОГО кошелька с выбором валюты.
@@ -56,11 +77,6 @@ public class Wallet {
         this.currency = currency;
         this.createdAt = createdAt;
     }
-
-    /**
-     * Конструктор без аргументов для десериализации.
-     */
-    Wallet() {}
 
     // ––– Бизнес-методы для изменения баланса
 
