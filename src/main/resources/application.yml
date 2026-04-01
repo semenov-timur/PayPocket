@@ -12,7 +12,7 @@ spring:
       # update — автоматически создаёт/обновляет таблицы (удобно для разработки)
       # create-drop — создаёт при запуске, удаляет при остановке (для тестов)
       # none — ничего не делает
-    show-sql: true
+    show-sql: false
     # show-sql: true — выводит SQL-запросы Hibernate в консоль (для отладки)
     properties:
       hibernate:

@@ -54,12 +54,4 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
      * @return отфильтрованный список транзакций кошелька
      */
     List<Transaction> findByWalletIdAndTypeOrderByCreatedAtDesc(UUID walletId, TransactionType type);
-
-    /**
-     * Сохраняет транзакцию в рамках существующего соединения/транзакции.
-     *
-     * @param conn        соединение с активной транзакцией
-     * @param transaction транзакция для сохранения
-     */
-    public void save(Connection conn, Transaction transaction) throws SQLException;
 }

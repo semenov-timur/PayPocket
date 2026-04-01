@@ -8,6 +8,7 @@ import com.paypocket.model.User;
 import com.paypocket.model.Wallet;
 import com.paypocket.service.UserService;
 import com.paypocket.service.WalletService;
+import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -114,7 +115,7 @@ public class ConsoleUI {
             case 3 -> handleDeposit();
             case 4 -> handleTransfer();
             case 5 -> handleWithdraw();
-            case 6 -> handleShowHistory();
+            //case 6 -> handleShowHistory();
             case 7 -> handleLogout();
             case 0 -> { return false; }
         }
@@ -347,6 +348,7 @@ public class ConsoleUI {
         }
     }
 
+    /*
     private void handleShowHistory() {
         System.out.println("\n––– История операций –––");
 
@@ -398,6 +400,7 @@ public class ConsoleUI {
             else return;
         }
     }
+     */
 
     // ===========================================
     // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ВВОДА
