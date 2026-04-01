@@ -1,10 +1,13 @@
 package com.paypocket.repository;
 
 import com.paypocket.model.Wallet;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,10 +15,14 @@ import java.util.UUID;
 /**
  * Репозиторий кошельков.
  *
- * <p>Расширяет базовый {@link Repository} методом поиска
- * кошельков по id владельца.</p>
+ * <p>Наследует JpaRepository, а значит Spring самостоятельно
+ * сгенерирует реализацию всех методов по имени.</p>
+ *
+ * <p>Основные CRUD-методы уже есть в базовом репозитории,
+ * здесь только специфичные запросы.</p>
  */
-public interface WalletRepository extends Repository<Wallet, UUID> {
+@Repository
+public interface WalletRepository extends JpaRepository<Wallet, UUID> {
 
     /**
      * Находит кошельки по id владельца.
@@ -23,25 +30,17 @@ public interface WalletRepository extends Repository<Wallet, UUID> {
      * @param userId идентификатор владельца
      * @return список кошельков (может быть пустым)
      */
-    List<Wallet> findByUserId(UUID userId);
+    List<Wallet> findByUserIdOrderByCreatedAtAsc(UUID userId);
 
     /**
      * Находит кошелёк с блокировкой строки (SELECT FOR UPDATE).
      * Используется внутри транзакции для предотвращения
      * конкурентных изменений баланса.
      *
-     * @param conn      соединение с активной транзакцией
      * @param walletId  id кошелька
      * @return          кошелёк или пустой Optional
      */
-    Optional<Wallet> findByIdForUpdate(Connection conn, UUID walletId) throws SQLException;
-
-    /**
-     * Обновляет баланс кошелька в рамках существующей транзакции.
-     *
-     * @param conn          соединение с активной транзакцией
-     * @param walletId      id кошелька
-     * @param newBalance    новый баланс
-     */
-    public void updateBalance(Connection conn, UUID walletId, BigDecimal newBalance) throws SQLException;
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT w FROM Wallet w WHERE w.id = :id")
+    Optional<Wallet> findByIdForUpdate(@Param("id") UUID walletId);
 }

@@ -2,6 +2,10 @@ package com.paypocket.repository;
 
 import com.paypocket.model.Transaction;
 import com.paypocket.model.TransactionType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -10,10 +14,15 @@ import java.util.UUID;
 
 /**
  * Репозиторий транзакций (операций).
- * <p>Расширяет базовый {@link Repository} методом поиска
- * транзакций по id кошелька или владельца.</p>
+ *
+ * <p>Наследует JpaRepository, а значит Spring самостоятельно
+ * сгенерирует реализацию всех методов по имени.</p>
+ *
+ * <p>Основные CRUD-методы уже есть в базовом репозитории,
+ * здесь только специфичные запросы.</p>
  */
-public interface TransactionRepository extends Repository<Transaction, UUID> {
+@Repository
+public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
 
     /**
      * Находит все транзакции кошелька, отсортированные по дате (новые первые).
@@ -21,17 +30,21 @@ public interface TransactionRepository extends Repository<Transaction, UUID> {
      * @param walletId id кошелька
      * @return отсортированный список транзакций кошелька
      */
-    List<Transaction> findByWalletId(UUID walletId);
+    List<Transaction> findByWalletIdOrderByCreatedAtDesc(UUID walletId);
 
     /**
      * Находит транзакции кошелька с пагинацией.
      *
-     * @param walletId      id кошелька
-     * @param pageNumber    номер страницы начиная с 1
-     * @param pageSize      кол-во записей на странице
-     * @return  страница транзакций
+     * <p>Pageble – объект Spring, содержащий номер страницы и размер.
+     * Page – надстройка над списком с метаданными (всего страниц, всего записей).</p>
+     *
+     * <p>Вызов: repo.findByWalletId(walletId, PageRequest.of(0, 5, Sort.by("createdAt").descending())).</p>
+     *
+     * @param walletId id кошелька
+     * @param pageable объект Spring, содержащий номер страницы и размер
+     * @return страница транзакций
      */
-    List<Transaction> findByWalletId(UUID walletId, int pageNumber, int pageSize);
+    Page<Transaction> findByWalletId(UUID walletId, Pageable pageable);
 
     /**
      * Находит транзакции кошелька определенного типа.
@@ -40,7 +53,7 @@ public interface TransactionRepository extends Repository<Transaction, UUID> {
      * @param type      тип транзакции (фильтр)
      * @return отфильтрованный список транзакций кошелька
      */
-    List<Transaction> findByWalletIdAndType(UUID walletId, TransactionType type);
+    List<Transaction> findByWalletIdAndTypeOrderByCreatedAtDesc(UUID walletId, TransactionType type);
 
     /**
      * Сохраняет транзакцию в рамках существующего соединения/транзакции.
