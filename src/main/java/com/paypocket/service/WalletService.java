@@ -1,6 +1,5 @@
 package com.paypocket.service;
 
-import com.paypocket.config.DatabaseConnectionManager;
 import com.paypocket.dto.TransferResult;
 import com.paypocket.exception.*;
 import com.paypocket.model.Currency;
@@ -11,6 +10,11 @@ import com.paypocket.repository.TransactionRepository;
 import com.paypocket.repository.WalletRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -33,27 +37,25 @@ import java.util.UUID;
  * <p>Все денежные операции создают записи в {@link TransactionRepository}
  * для полной истории и аудита.</p>
  */
+@Service
+@Transactional(readOnly = true)
 public class WalletService {
 
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
-    private final DatabaseConnectionManager connectionManager;
 
     private final Logger log = LoggerFactory.getLogger(WalletService.class);
 
     /**
-     * Конструктор с внедрением зависимостей для Jdbc-режима.
-     * С поддержкой БД-транзакций.
+     * Конструктор с внедрением зависимостей.
      *
      * @param walletRepository      репозиторий кошельков
      * @param transactionRepository репозиторий трензакций
      */
     public WalletService(WalletRepository walletRepository,
-                         TransactionRepository transactionRepository,
-                         DatabaseConnectionManager connectionManager) {
+                         TransactionRepository transactionRepository) {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
-        this.connectionManager =  connectionManager;
     }
 
     // ======================================
@@ -68,29 +70,35 @@ public class WalletService {
      * @param currency  валюта кошелька (RUB, USD, EUR)
      * @return созданный кошелек с нулевым балансом
      */
+    @Transactional
     public Wallet createWallet(UUID userId, String name, Currency currency) {
-        List<Wallet> existingWallets = walletRepository.findByUserId(userId);
-       boolean currencyExists = existingWallets.stream()
-               .anyMatch(wallet -> wallet.getCurrency() == currency);
-       if (currencyExists && currency != Currency.RUB) {
-           throw new WalletAlreadyExistsException(currency);
-       }
+        if (currency != Currency.RUB) {
+            List<Wallet> existingWallets = walletRepository.findByUserIdOrderByCreatedAtAsc(userId);
+            boolean currencyExists = existingWallets.stream()
+                    .anyMatch(wallet -> wallet.getCurrency() == currency);
+            if (currencyExists) {
+                throw new WalletAlreadyExistsException(currency);
+            }
+        }
 
        Wallet wallet = new Wallet(userId, name, currency);
        walletRepository.save(wallet);
-       log.info("Wallet created: id – {}, userId – {}, name – {}, currency – {}", wallet.getId(), userId, name, currency);
+
+       log.info("Wallet created: id – {}, userId – {}, name – {}, currency – {}",
+               wallet.getId(), userId, name, currency);
        return wallet;
     }
 
     /**
      * По умолчанию создает рублевый кошелек.
+     *
      * @param userId    id владельца
      * @param name      название кошелька
      * @return созданный кошелек с нулевым балансом
      */
+    @Transactional
     public Wallet createWallet(UUID userId, String name) {
-        Wallet wallet = new Wallet(userId, name, Currency.RUB);
-        return walletRepository.save(wallet);
+        return createWallet(userId, name, Currency.RUB);
     }
 
     // ======================================
@@ -108,19 +116,20 @@ public class WalletService {
      * @throws com.paypocket.exception.WalletNotFoundException если кошелек не найден
      * @throws InvalidAmountException если сумма <= 0
      */
+    @Transactional
     public Wallet deposit(UUID walletId, BigDecimal amount) {
         validateAmount(amount);
 
         Wallet wallet = getWalletOrThrow(walletId);
         wallet.deposit(amount);
-        walletRepository.save(wallet);
 
         Transaction transaction = new Transaction.Builder(walletId, TransactionType.DEPOSIT, amount)
                 .decscription("Пополнение кошелька")
                 .build();
         transactionRepository.save(transaction);
 
-        log.info("Deposit: walletId – {}, amount – {}", walletId, amount);
+        log.info("Deposit: walletId – {}, amount – {}, newBalance – {}",
+                walletId, amount, wallet.getBalance());
         return wallet;
     }
 
@@ -139,19 +148,20 @@ public class WalletService {
      * @throws com.paypocket.exception.WalletNotFoundException если кошелек не найден
      * @throws InvalidAmountException если сумма <= 0
      */
+    @Transactional
     public Wallet withdraw(UUID walletId, BigDecimal amount) {
         validateAmount(amount);
 
         Wallet wallet = getWalletOrThrow(walletId);
         wallet.withdraw(amount);
-        walletRepository.save(wallet);
 
         Transaction transaction = new Transaction.Builder(walletId, TransactionType.WITHDRAW, amount)
                 .decscription("Снятие средств")
                 .build();
         transactionRepository.save(transaction);
 
-        log.info("Withdraw: walletId - {}, amount – {}", walletId, amount);
+        log.info("Withdraw: walletId - {}, amount – {}, newBalance – {}",
+                walletId, amount, wallet.getBalance());
         return  wallet;
     }
 
@@ -162,9 +172,16 @@ public class WalletService {
     /**
      * Переводит средства между кошельками.
      *
-     * <p>Атомарная операция: либо выполняется полностью, либо не выполняется вообще.
-     * Сейчас атомарность обеспечивается тем, что всё происходит в одном потоке
-     * в памяти. Далее подключим БД-транзакцию, потом Spring @Transactional.</p>
+     * <p>Spring @Transactional делает все автоматически:
+     * <ul>
+     *      <li>Открывает транзакцию перед методом</li>
+     *      <li>COMMIT при успешном завершении</li>
+     *      <li>ROLLBACK при любом исключении</li>
+     * </ul>.
+     * </p>
+     *
+     * <p>findByIdForUpdate() добавляет SELECT FOR UPDATE —
+     * блокировка строк, как в JDBC-версии.</p>
      *
      * <p>Создаёт ДВЕ записи транзакций (двойная запись):
      * TRANSFER_OUT у отправителя, TRANSFER_IN у получателя.</p>
@@ -178,75 +195,59 @@ public class WalletService {
      * @throws com.paypocket.exception.WalletNotFoundException      если сумма перевода <= 0
      * @throws com.paypocket.exception.InsufficientFundsException   если в кошельке недостаточно средств для перевода
      */
+    @Transactional
     public TransferResult transfer(UUID fromWalletId, UUID toWalletId, BigDecimal amount) {
         validateAmount(amount);
 
-        Connection connection = connectionManager.getConnection();
-
-        try {
-            connection.setAutoCommit(false);
-
-            UUID firstId = fromWalletId.compareTo(toWalletId) < 0 ? fromWalletId : toWalletId;
-            UUID secondId = fromWalletId.compareTo(toWalletId) < 0 ? toWalletId : fromWalletId;
-
-            walletRepository.findByIdForUpdate(connection, firstId);
-            walletRepository.findByIdForUpdate(connection, secondId);
-
-            Wallet sender = walletRepository.findByIdForUpdate(connection, fromWalletId)
-                    .orElseThrow(() -> new WalletNotFoundException(fromWalletId));
-            Wallet receiver = walletRepository.findByIdForUpdate(connection, toWalletId)
-                    .orElseThrow(() -> new WalletNotFoundException(toWalletId));
-
-            if (!sender.getCurrency().equals(receiver.getCurrency())) {
-                throw new CurrencyMismatchException(sender.getCurrency(), receiver.getCurrency());
-            }
-
-            if (sender.getBalance().compareTo(amount) < 0) {
-                throw new InsufficientFundsException(sender.getBalance(), amount);
-            }
-
-            BigDecimal senderNewBalance = sender.getBalance().subtract(amount);
-            BigDecimal receiverNewBalance = receiver.getBalance().add(amount);
-
-            walletRepository.updateBalance(connection, fromWalletId, senderNewBalance);
-            walletRepository.updateBalance(connection, toWalletId, receiverNewBalance);
-
-            Transaction out = new Transaction.Builder(fromWalletId, TransactionType.TRANSACTION_OUT, amount)
-                    .counterpartyWalletId(toWalletId)
-                    .decscription("Перевод отправлен")
-                    .build();
-            transactionRepository.save(connection, out);
-
-            Transaction in = new Transaction.Builder(toWalletId, TransactionType.TRANSACTION_IN, amount)
-                    .counterpartyWalletId(fromWalletId)
-                    .decscription("Перевод получен")
-                    .build();
-            transactionRepository.save(connection, in);
-
-            connection.commit();
-
-            log.info("Transfer: {} → {}, amount={}, senderBalance={}, receiverBalance={}",
-                    fromWalletId, toWalletId, amount, senderNewBalance, receiverNewBalance);
-
-            return new TransferResult(
-                    fromWalletId,
-                    toWalletId,
-                    amount,
-                    senderNewBalance,
-                    receiverNewBalance);
-
-        } catch (SQLException e) {
-            safeRollback(connection);
-            log.error("Transfer DB error: {} → {}, amount={}", fromWalletId, toWalletId, amount, e);
-            throw new RuntimeException("Ошибка БД при переводе: " + e.getMessage(), e);
-        } catch (PayPocketException e) {
-            safeRollback(connection);
-            log.warn("Transfer rejected: {} → {}, amount={}, reason={}",fromWalletId, toWalletId, amount, e.getMessage());
-            throw e;
-        } finally {
-            safeClose(connection);
+        if (fromWalletId.equals(toWalletId)) {
+            throw new SelfTransferException(fromWalletId);
         }
 
+        UUID firstId = fromWalletId.compareTo(toWalletId) < 0 ? fromWalletId : toWalletId;
+        UUID secondId = fromWalletId.compareTo(toWalletId) < 0 ? toWalletId : fromWalletId;
+
+        walletRepository.findByIdForUpdate(firstId);
+        walletRepository.findByIdForUpdate(secondId);
+
+        Wallet sender = walletRepository.findByIdForUpdate(fromWalletId)
+                .orElseThrow(() -> new WalletNotFoundException(fromWalletId));
+        Wallet receiver = walletRepository.findByIdForUpdate(toWalletId)
+                .orElseThrow(() -> new WalletNotFoundException(toWalletId));
+
+        if (sender.getCurrency() != receiver.getCurrency()) {
+            throw new CurrencyMismatchException(sender.getCurrency(), receiver.getCurrency());
+        }
+
+        if (sender.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientFundsException(sender.getBalance(), amount);
+        }
+
+        sender.withdraw(amount);
+        receiver.deposit(amount);
+
+        Transaction out = new Transaction.Builder(fromWalletId, TransactionType.TRANSACTION_OUT, amount)
+                .counterpartyWalletId(toWalletId)
+                .decscription("Перевод отправлен")
+                .build();
+        transactionRepository.save(out);
+
+        Transaction in = new Transaction.Builder(toWalletId, TransactionType.TRANSACTION_IN, amount)
+                .counterpartyWalletId(fromWalletId)
+                .decscription("Перевод получен")
+                .build();
+        transactionRepository.save(in);
+
+
+        log.info("Transfer: {} → {}, amount={}, senderBalance={}, receiverBalance={}",
+                fromWalletId, toWalletId, amount, sender.getBalance(), receiver.getBalance());
+
+        return new TransferResult(
+                fromWalletId,
+                toWalletId,
+                amount,
+                sender.getBalance(),
+                receiver.getBalance()
+        );
     }
 
     // ================================================================
@@ -271,7 +272,7 @@ public class WalletService {
      * @return список найденных кошельков
      */
     public List<Wallet> getUserWallets(UUID userId) {
-        return this.walletRepository.findByUserId(userId);
+        return this.walletRepository.findByUserIdOrderByCreatedAtAsc(userId);
     }
 
     /**
@@ -295,7 +296,7 @@ public class WalletService {
     public List<Transaction> getTransactionHistory(UUID walletId) {
         // проверяем, что кошелек существует
         getWalletOrThrow(walletId);
-        return this.transactionRepository.findByWalletId(walletId);
+        return this.transactionRepository.findByWalletIdOrderByCreatedAtDesc(walletId);
     }
 
     /**
@@ -305,10 +306,13 @@ public class WalletService {
      * @return список операций
      * @throws WalletNotFoundException если кошелек не найден
      */
-    public List<Transaction> getTransactionHistory(UUID walletId, int pageNumber, int pageSize) {
+    public Page<Transaction> getTransactionHistory(UUID walletId, int pageNumber, int pageSize) {
         // проверяем, что кошелек существует
         getWalletOrThrow(walletId);
-        return this.transactionRepository.findByWalletId(walletId, pageNumber, pageSize);
+        return this.transactionRepository.findByWalletId(
+                walletId,
+                PageRequest.of(pageNumber, pageSize,  Sort.by("createdAt").descending())
+        );
     }
 
     /**
@@ -321,7 +325,7 @@ public class WalletService {
     public List<Transaction> getTransactionHistory(UUID walletId, TransactionType type) {
         // проверяем, что кошелек существует
         getWalletOrThrow(walletId);
-        return this.transactionRepository.findByWalletIdAndType(walletId, type);
+        return this.transactionRepository.findByWalletIdAndTypeOrderByCreatedAtDesc(walletId, type);
     }
 
     // ================================================================
@@ -339,27 +343,6 @@ public class WalletService {
     private void validateAmount(BigDecimal amount) {
         if (amount == null ||  amount.compareTo(BigDecimal.ZERO) <= 0 || amount.scale() > 2) {
             throw new InvalidAmountException(amount);
-        }
-    }
-
-    private void safeRollback(Connection connection) {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.rollback();
-            }
-        } catch (SQLException e) {
-            System.err.println("Ошибка при rollback: " + e.getMessage());
-        }
-    }
-
-    private void safeClose(Connection connection) {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.setAutoCommit(true);
-                connection.close();
-            }
-        } catch (SQLException e) {
-            System.err.println("Ошибка при закрытии соединения: " + e.getMessage());
         }
     }
 }

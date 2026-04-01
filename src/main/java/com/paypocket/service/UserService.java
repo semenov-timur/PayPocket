@@ -6,6 +6,8 @@ import com.paypocket.model.User;
 import com.paypocket.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +17,15 @@ import java.util.UUID;
  *
  * <p>Отвечает за регистрацию, поиск и валидацию пользователей.
  * Все бизнес-правила проверяются здесь.</p>
+ *
+ * <p>@Service – Spring создасть один экземпляр этого класса (бин)
+ * автоматически и внедрит UserRepository через конструктор.</p>
+ *
+ * <p>@Transactional(readOnly=true) на классе – все методы по умолчанию
+ * выполняются в readOnly транзакции (это оптимизация для SELECT).</p>
  */
+@Service
+@Transactional(readOnly=true)
 public class UserService {
 
     private final UserRepository userRepository;
@@ -25,8 +35,8 @@ public class UserService {
     /**
      * Конструктор с внедрением зависимости (DI - dependency injection).
      *
-     * <p>Принимает интерфейс UserRepository и не привязан к контретной реализации.
-     * Можно передать InMemoryUserRepository, JdbcUserRepository или мок для тестов.</p>
+     * <p>Принимает интерфейс UserRepository,
+     * который Spring подставит автоматически.</p>
      *
      * @param userRepository репозиторий пользователей
      */
@@ -46,12 +56,13 @@ public class UserService {
      * @return созданный пользователь
      * @throws DuplicateUserException если username или email уже заняты
      */
+    @Transactional
     public User register(String username, String email, String password) {
         // Валидация входных данных
         validateRegistrationInput(username, email, password);
 
         // Проверка уникальности
-        if (userRepository.existsByUsername(username)) {
+        if (userRepository.existsByUsernameIgnoreCase(username)) {
             log.warn("Registration taken – username taken: {}", username);
             throw new DuplicateUserException("username",  username);
         }
@@ -64,6 +75,7 @@ public class UserService {
         // TODO: хэширование паролей
         User user = new User(username, email, password);
         userRepository.save(user);
+
         log.info("User registered successfully: username – {}, id – {}", username, user.getId());
         return user;
     }
@@ -78,7 +90,7 @@ public class UserService {
      * @throws IllegalArgumentException если пароль неверный
      */
     public User authenticate(String username, String password) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> {
                     log.warn("Auth failed – user not found: {}", username);
                     return new UserNotFoundException(username);
@@ -89,6 +101,7 @@ public class UserService {
             throw new IllegalArgumentException("Неверный пароль!");
         }
 
+        log.info("User authenticated: username = {}",  username);
         return user;
     }
 
@@ -100,7 +113,7 @@ public class UserService {
      * @throws UserNotFoundException если пользователь не найден
      */
     public User getByUsername(String username) {
-        return userRepository.findByUsername(username)
+        return userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new UserNotFoundException(username));
     }
 
