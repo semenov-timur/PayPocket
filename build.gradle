@@ -36,6 +36,10 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.4'
+
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
 }
 
 application {
@@ -44,8 +48,4 @@ application {
 
 test {
     useJUnitPlatform()
-}
-
-run {
-    standardInput = System.in
 }
