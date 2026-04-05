@@ -1,4 +1,4 @@
-package com.paypocket.controller;
+package com.paypocket.controller.api;
 
 
 import com.paypocket.dto.*;
