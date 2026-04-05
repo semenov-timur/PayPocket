@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>PayPocket — История</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="navbar">
+    <span class="brand">💳 PayPocket</span>
+    <div>
+        <a th:href="@{/dashboard}">Дашборд</a>
+        <a th:href="@{/deposit}">Пополнить</a>
+        <a th:href="@{/transfer}">Перевести</a>
+        <a th:href="@{/logout}">Выйти</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2>
+            История: <span th:text="${wallet.name}">Кошелёк</span>
+            (<span th:text="${wallet.balance}">0</span>
+            <span th:text="${wallet.currency}">RUB</span>)
+        </h2>
+
+        <div th:if="${transactions.isEmpty()}">
+            <p>Операций пока нет.</p>
+        </div>
+
+        <table th:unless="${transactions.isEmpty()}">
+            <thead>
+            <tr>
+                <th>Тип</th>
+                <th>Сумма</th>
+                <th>Описание</th>
+                <th>Дата</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="tx : ${transactions.content}">
+                <td>
+                            <span th:class="${'type-' + tx.type.name().toLowerCase().replace('_', '-')}"
+                                  th:text="${tx.type.description}">Тип</span>
+                </td>
+                <td>
+                            <span th:class="${tx.type.name().contains('OUT') || tx.type.name() == 'WITHDRAW' ? 'type-withdraw' : 'type-deposit'}"
+                                  th:text="${(tx.type.name().contains('OUT') || tx.type.name() == 'WITHDRAW' ? '-' : '+') + tx.amount}">
+                                0.00
+                            </span>
+                </td>
+                <td th:text="${tx.description ?: '—'}">Описание</td>
+                <td th:text="${#temporals.format(tx.createdAt, 'dd.MM.yyyy HH:mm')}">
+                    01.01.2025 12:00
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <!-- Пагинация -->
+        <div th:if="${transactions.totalPages > 1}"
+             style="margin-top: 15px; text-align: center;">
+            <a th:if="${currentPage > 0}"
+               th:href="@{/history/{id}(id=${wallet.id}, page=${currentPage - 1})}"
+               class="btn btn-primary">← Назад</a>
+
+            <span style="margin: 0 15px;">
+                    Страница
+                    <span th:text="${currentPage + 1}">1</span>
+                    из <span th:text="${transactions.totalPages}">1</span>
+                </span>
+
+            <a th:if="${transactions.hasNext()}"
+               th:href="@{/history/{id}(id=${wallet.id}, page=${currentPage + 1})}"
+               class="btn btn-primary">Вперёд →</a>
+        </div>
+
+        <p style="margin-top: 15px;">
+            <a th:href="@{/dashboard}">← К дашборду</a>
+        </p>
+    </div>
+</div>
+</body>
+</html>
