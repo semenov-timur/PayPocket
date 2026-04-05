@@ -15,23 +15,28 @@
 - **Мультивалютные кошельки** — создание кошельков в RUB, USD, EUR (один кошелёк на валюту)
 - **Пополнение и снятие средств** — внесение и вывод средств с валидацией суммы (до 2 знаков после запятой)
 - **Переводы** — перевод средств другому пользователю по username с проверкой валют, достаточности средств и подтверждением операции
-- **Атомарные транзакции** — переводы выполняются в рамках БД-транзакции с блокировкой строк (SELECT FOR UPDATE)
+- **Атомарные транзакции** — переводы выполняются через @Transactional с блокировкой строк (@Lock PESSIMISTIC_WRITE)
 - **История операций** — постраничный просмотр транзакций с датой, типом и суммой
+- **Веб-интерфейс** — дашборд, формы пополнения и перевода, история в браузере
+- **REST API** — полноценный API с валидацией, обработкой ошибок и Swagger-документацией
 
 ---
 
 ## Стек технологий
 
-| Технология | Назначение                       |
-|------------|----------------------------------|
-| Java 17    | Язык разработки                  |
-| Gradle     | Система сборки проекта           |
-| PostgreSQL | Реляционная база данных          |
-| JDBC       | Взаимодействие с БД              |
-| HikariCP   | Пул соединений                   |
-| Docker     | Контейнер для PostgreSQL         |
-| SLF4J      | Логирование                      |
-| JUnit 5    | Тестирование (в планах)          |
+| Технология      | Назначение                             |
+|-----------------|----------------------------------------|
+| Java 17         | Язык разработки                        |
+| Spring Boot 3.3 | Фреймворк, автоконфигурация            |
+| Spring Data JPA | ORM, репозитории без реализации         |
+| Spring MVC      | Веб-интерфейс (Thymeleaf)              |
+| Hibernate       | JPA-реализация, dirty checking          |
+| PostgreSQL      | Реляционная база данных                |
+| HikariCP        | Пул соединений (авто)                  |
+| Flyway          | Автоматические миграции БД              |
+| Swagger/OpenAPI | Документация REST API                  |
+| Gradle          | Система сборки                         |
+| SLF4J    | Логирование                            |
 
 ---
 
@@ -41,20 +46,17 @@
 
 ```
 ┌─────────────────────────────────┐
-│         UI (ConsoleUI)          │  Ввод/вывод, меню, форматирование
+│  Web UI (Thymeleaf Controllers) │  HTML-страницы в браузере
+│  REST API (RestControllers)     │  JSON-ответы для клиентов
 ├─────────────────────────────────┤
 │  Service (UserService,          │  Бизнес-логика, валидация,
-│           WalletService)        │  координация операций
+│           WalletService)        │  @Transactional
 ├─────────────────────────────────┤
-│  Repository (интерфейсы)        │  Контракт хранения данных
+│  Repository (Spring Data JPA)   │  Интерфейсы без реализации
 ├─────────────────────────────────┤
-│  JDBC (реализации)              │  Хранение в PostgreSQL
+│  Hibernate + PostgreSQL         │  ORM, SQL-генерация, пул соединений
 └─────────────────────────────────┘
 ```
-
-Каждый слой знает только о слое ниже.
-Сервисы работают с интерфейсами репозиториев —
-реализацию можно заменить без изменения бизнес-логики.
 
 ---
 
@@ -64,51 +66,65 @@
 paypocket/
 ├── build.gradle
 ├── settings.gradle
-├── docker-compose.yml                    — PostgreSQL в Docker
 ├── README.md
 └── src/main/
     ├── java/com/paypocket/
-    │   ├── PayPocketApp.java             — точка входа, сборка зависимостей
-    │   ├── model/                        — доменные сущности
+    │   ├── PayPocketApplication.java          — @SpringBootApplication
+    │   ├── model/                             — JPA Entity
     │   │   ├── User.java
     │   │   ├── Wallet.java
     │   │   ├── Transaction.java
-    │   │   ├── TransactionType.java      — DEPOSIT, WITHDRAW, TRANSFER_IN, TRANSFER_OUT
-    │   │   └── Currency.java             — RUB, USD, EUR
-    │   ├── repository/                   — интерфейсы и реализации хранения
-    │   │   ├── Repository.java           — базовый generic CRUD
+    │   │   ├── TransactionType.java
+    │   │   └── Currency.java
+    │   ├── repository/                        — Spring Data JPA
     │   │   ├── UserRepository.java
     │   │   ├── WalletRepository.java
-    │   │   ├── TransactionRepository.java
-    │   │   └── jdbc/                     — JDBC-реализации
-    │   │       ├── AbstractJdbcRepository.java
-    │   │       ├── JdbcUserRepository.java
-    │   │       ├── JdbcWalletRepository.java
-    │   │       └── JdbcTransactionRepository.java
-    │   ├── service/                      — бизнес-логика
-    │   │   ├── UserService.java          — регистрация, аутентификация
-    │   │   └── WalletService.java        — кошельки, переводы, история
-    │   ├── config/                       — конфигурация
-    │   │   ├── AppConfig.java            — чтение application.properties
-    │   │   └── DatabaseConnectionManager.java  — HikariCP пул соединений
-    │   ├── dto/                          — объекты передачи данных
-    │   │   └── TransferResult.java
-    │   ├── exception/                    — типизированные исключения
-    │   │   ├── PayPocketException.java
-    │   │   ├── UserNotFoundException.java
-    │   │   ├── DuplicateUserException.java
-    │   │   ├── WalletNotFoundException.java
-    │   │   ├── WalletAlreadyExistsException.java
-    │   │   ├── InsufficientFundsException.java
-    │   │   ├── SelfTransferException.java
-    │   │   ├── InvalidAmountException.java
-    │   │   └── CurrencyMismatchException.java
-    │   └── ui/                           — пользовательский интерфейс
-    │       └── ConsoleUI.java
+    │   │   └── TransactionRepository.java
+    │   ├── service/                           — бизнес-логика
+    │   │   ├── UserService.java
+    │   │   └── WalletService.java
+    │   ├── controller/                        — веб-интерфейс (Thymeleaf)
+    │   │   ├── AuthController.java
+    │   │   ├── WalletController.java
+    │   │   └── api/                           — REST API
+    │   │       ├── UserApiController.java
+    │   │       ├── WalletApiController.java
+    │   │       └── GlobalExceptionHandler.java
+    │   ├── config/                            — конфигурация
+    │   │   └── OpenApiConfig.java
+    │   ├── dto/                               — запросы и ответы API
+    │   │   ├── CreateUserRequest.java
+    │   │   ├── CreateWalletRequest.java
+    │   │   ├── DepositRequest.java
+    │   │   ├── TransferRequest.java
+    │   │   ├── TransferResult.java
+    │   │   ├── UserResponse.java
+    │   │   ├── WalletResponse.java
+    │   │   ├── TransactionResponse.java
+    │   │   └── ErrorResponse.java
+    │   └── exception/                         — типизированные исключения
+    │       ├── PayPocketException.java
+    │       ├── UserNotFoundException.java
+    │       ├── DuplicateUserException.java
+    │       ├── WalletNotFoundException.java
+    │       ├── WalletAlreadyExistsException.java
+    │       ├── InsufficientFundsException.java
+    │       ├── SelfTransferException.java
+    │       ├── InvalidAmountException.java
+    │       └── CurrencyMismatchException.java
     └── resources/
-        ├── application.properties        — настройки подключения к БД
+        ├── application.yml                    — конфигурация Spring Boot
+        ├── templates/                         — HTML-шаблоны Thymeleaf
+        │   ├── login.html
+        │   ├── register.html
+        │   ├── dashboard.html
+        │   ├── deposit.html
+        │   ├── transfer.html
+        │   └── history.html
+        ├── static/css/
+        │   └── style.css
         └── db/migration/
-            └── V1__create_tables.sql     — SQL-скрипт создания таблиц
+            └── V1__create_tables.sql          — Flyway-миграция
 ```
 
 ---
@@ -120,18 +136,41 @@ paypocket/
 - Локально установленный PostgreSQL
 
 ```bash
+git clone https://github.com/semenov-timur/paypocket.git
+cd paypocket
+
 # Создать базу данных
 psql -U postgres -c "CREATE DATABASE paypocket;"
 
-# Выполнить миграцию
-psql -U postgres -d paypocket -f src/main/resources/db/migration/V1__create_tables.sql
-
-# Проверить настройки в src/main/resources/application.properties
-# Запустить приложение
-./gradlew build run --console=plain
+# Запустить приложение (Flyway создаст таблицы автоматически)
+./gradlew bootRun
 ```
 
-При первом запуске зарегистрируйте пользователя через консольное меню.
+### Доступ
+
+| Интерфейс      | URL                                   |
+|----------------|---------------------------------------|
+| Веб-приложение | http://localhost:8080                 |
+| REST API       | http://localhost:8080/api/v1/...      |
+| Swagger UI     | http://localhost:8080/swagger-ui.html |
+
+---
+
+## REST API
+
+Интерактивная документация: http://localhost:8080/swagger-ui.html
+
+| Метод | URL                               | Описание                 |
+|-------|-----------------------------------|--------------------------|
+| POST  | /api/v1/users                     | Регистрация пользователя |
+| GET   | /api/v1/users/{id}                | Получить пользователя    |
+| GET   | /api/v1/users                     | Список пользователей     |
+| POST  | /api/v1/wallets?userId=...        | Создать кошелёк          |
+| GET   | /api/v1/wallets?userId=...        | Кошельки пользователя    |
+| GET   | /api/v1/wallets/{id}              | Информация о кошельке    |
+| POST  | /api/v1/wallets/{id}/deposit      | Пополнение               |
+| POST  | /api/v1/wallets/{id}/transfer     | Перевод средств          |
+| GET   | /api/v1/wallets/{id}/transactions | История операций         |
 
 ---
 
@@ -143,22 +182,48 @@ psql -U postgres -d paypocket -f src/main/resources/db/migration/V1__create_tabl
 
 **Двойная запись (double-entry)** — каждый перевод
 создаёт две записи транзакций: TRANSFER_OUT у отправителя
-и TRANSFER_IN у получателя. Это банковский стандарт,
-обеспечивающий сверяемость данных.
+и TRANSFER_IN у получателя. Банковский стандарт, обеспечивающий
+сверяемость данных.
 
-**Атомарность переводов** — перевод выполняется в единой БД-транзакции
-(BEGIN → COMMIT / ROLLBACK). SELECT FOR UPDATE блокирует строки
-для предотвращения конкурентных изменений. Блокировки упорядочены
-по UUID для предотвращения deadlock.
+**Атомарность переводов** — @Transactional с @Lock(PESSIMISTIC_WRITE).
+Блокировки упорядочены по UUID для предотвращения deadlock.
+При любой ошибке — автоматический ROLLBACK.
 
-**Пул соединений (HikariCP)** — переиспользование TCP-соединений
-с PostgreSQL вместо открытия нового на каждый запрос.
+**Dirty Checking** — Hibernate отслеживает изменения managed-объектов
+внутри @Transactional и автоматически генерирует UPDATE при commit.
+
+**Spring Data JPA** — репозитории без реализации. Spring генерирует
+SQL по имени метода (findByUsernameIgnoreCase → SELECT ... WHERE LOWER(username) = LOWER(?)).
+
+**Глобальная обработка ошибок** — @RestControllerAdvice перехватывает
+исключения и возвращает структурированный JSON с HTTP-статусом
+(404, 409, 400) вместо 500 со стектрейсом.
 
 **Паттерны проектирования:**
 - Builder — создание Transaction (много полей, часть опциональна)
 - Strategy — интерфейс Repository с взаимозаменяемыми реализациями
-- Template Method — AbstractJdbcRepository с общими CRUD-операциями
-- Dependency Injection — сервисы получают зависимости через конструктор
+- Dependency Injection — Spring управляет зависимостями через конструкторы
+- MVC — разделение контроллеров, сервисов и представлений
+- DTO — разделение внутренних Entity и внешнего API
+
+---
+
+## Эволюция проекта
+
+Проект прошёл через три этапа, каждый доступен через Git-теги:
+
+| Версия | Стек                              | Описание                                             |
+|--------|-----------------------------------|------------------------------------------------------|
+| v1.0   | Java, InMemory, JSON              | Консольное приложение, хранение в памяти и файле     |
+| v2.0   | JDBC, PostgreSQL, HikariCP        | Реальная БД, атомарные транзакции, SELECT FOR UPDATE |
+| v3.0   | Spring Boot, JPA, Thymeleaf, REST | Веб-интерфейс, REST API, Swagger, Flyway             |
+
+```bash
+# Посмотреть конкретную версию
+git checkout v1.0
+git checkout v2.0
+git checkout v3.0
+```
 
 ---
 
@@ -168,14 +233,16 @@ psql -U postgres -d paypocket -f src/main/resources/db/migration/V1__create_tabl
 - [x] Мультивалютные кошельки
 - [x] PostgreSQL + JDBC + HikariCP
 - [x] Атомарные транзакции с SELECT FOR UPDATE
-- [x] Docker для PostgreSQL
 - [x] Логирование (SLF4J)
-- [x] Пагинация истории операций
-- [ ] Spring Boot + Spring Data JPA
-- [ ] REST API + Swagger
-- [ ] Веб-интерфейс (Thymeleaf)
+- [x] Spring Boot + Spring Data JPA
+- [x] Веб-интерфейс (Thymeleaf)
+- [x] REST API + Swagger/OpenAPI
+- [x] Flyway миграции
+- [x] Глобальная обработка ошибок
+- [x] DTO с валидацией (Jakarta Validation)
 - [ ] Docker-контейнер для приложения
-- [ ] Конвертация валют (ExchangeRateProvider)
+- [ ] Юнит-тесты (JUnit 5 + Mockito)
+- [ ] Конвертация валют
 
 ---
 
