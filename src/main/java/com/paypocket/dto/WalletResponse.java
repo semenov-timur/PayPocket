@@ -4,11 +4,13 @@ import com.paypocket.model.Wallet;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * DTO для получения кошелька.
  */
 public class WalletResponse {
+    private UUID id;
     private String name;
     private BigDecimal balance;
     private String currency;
@@ -20,6 +22,7 @@ public class WalletResponse {
      */
     public static  WalletResponse from(Wallet wallet) {
         WalletResponse response = new WalletResponse();
+        response.id = wallet.getId();
         response.name =  wallet.getName();
         response.balance =  wallet.getBalance();
         response.currency = wallet.getCurrency().name();
@@ -27,6 +30,9 @@ public class WalletResponse {
         return response;
     }
 
+    public UUID getId() {
+        return id;
+    }
     public String getName() {
         return name;
     }
