@@ -2,7 +2,7 @@ package com.paypocket.model;
 
 /**
  * Типы операций в системе.
- *
+ * <p>
  * DEPOSIT          – пополнение кошелька
  * WITHDRAW         – снятие средств
  * TRANSACTION_IN   – Входящий перевод от другого пользователя

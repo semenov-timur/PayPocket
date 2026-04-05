@@ -41,7 +41,7 @@ public class WalletController {
     public String dashboard(HttpSession session,
                             Model model) {
         User user = getCurrentUser(session);
-        if  (user == null) {
+        if (user == null) {
             return "redirect:/login";
         }
 
@@ -60,13 +60,13 @@ public class WalletController {
                                @RequestParam String currency,
                                HttpSession session,
                                RedirectAttributes redirectAttributes) {
-        User  user = getCurrentUser(session);
+        User user = getCurrentUser(session);
         if (user == null) {
             return "redirect:/login";
         }
 
         try {
-            Currency cur =  Currency.valueOf(currency.toUpperCase());
+            Currency cur = Currency.valueOf(currency.toUpperCase());
             walletService.createWallet(user.getId(), name, cur);
             redirectAttributes.addFlashAttribute("success", "Кошелек создан");
         } catch (PayPocketException e) {
@@ -84,7 +84,7 @@ public class WalletController {
 
     @GetMapping("/deposit")
     public String showDepositPage(HttpSession session,
-                          Model model) {
+                                  Model model) {
         User user = getCurrentUser(session);
         if (user == null) {
             return "redirect:/login";
@@ -112,7 +112,7 @@ public class WalletController {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
 
-        return  "redirect:/dashboard";
+        return "redirect:/dashboard";
     }
 
     // ========================
@@ -122,7 +122,7 @@ public class WalletController {
     @GetMapping("/transfer")
     public String showTransferPage(HttpSession session,
                                    Model model) {
-        User  user = getCurrentUser(session);
+        User user = getCurrentUser(session);
         if (user == null) {
             return "redirect:/login";
         }
@@ -150,7 +150,7 @@ public class WalletController {
             Wallet receiverWallet = walletService.getUserWallets(recipient.getId()).stream()
                     .filter(w -> w.getCurrency() == senderWallet.getCurrency())
                     .findFirst()
-                    .orElseThrow(() -> new PayPocketException("У получателя нет кошелька в валюте " +  senderWallet.getCurrency()));
+                    .orElseThrow(() -> new PayPocketException("У получателя нет кошелька в валюте " + senderWallet.getCurrency()));
 
             TransferResult result = walletService.transfer(fromWalletId, receiverWallet.getId(), amount);
 

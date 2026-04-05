@@ -18,11 +18,11 @@ public class InsufficientFundsException extends PayPocketException {
         this.requested = requested;
     }
 
-    public  BigDecimal getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 
-    public  BigDecimal getRequested() {
+    public BigDecimal getRequested() {
         return requested;
     }
 }

@@ -11,7 +11,7 @@ import java.util.UUID;
 
 /**
  * Кошелек пользователя.
- *
+ * <p>
  * Хранит текущий баланс. Баланс не может быть отрицательным.
  * Изменение баланса доступно только через контролируемые методы – withdraw() и deposit(),
  * а не через публичный сеттер.
@@ -34,10 +34,10 @@ public class Wallet {
     private BigDecimal balance;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "currency",  nullable = false,  length = 3)
+    @Column(name = "currency", nullable = false, length = 3)
     private Currency currency;          // "RUB" по умолчанию
 
-    @Column(name = "created_at",  nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     // ––– Конструкторы –––
@@ -45,7 +45,8 @@ public class Wallet {
     /**
      * Конструктор без аргументов.
      */
-    protected Wallet() {}
+    protected Wallet() {
+    }
 
     /**
      * Создание НОВОГО кошелька с выбором валюты.
@@ -109,7 +110,7 @@ public class Wallet {
      * Проверка: достаточно ли средств для операции?
      */
     public boolean hasSufficientFunds(BigDecimal amount) {
-        return  balance.compareTo(amount) >= 0;
+        return balance.compareTo(amount) >= 0;
     }
 
     // ––– Приватный вспомогательный метод –––
@@ -157,8 +158,10 @@ public class Wallet {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Wallet wallet = (Wallet) o;
         return Objects.equals(this.id, wallet.id);
     }
@@ -173,12 +176,12 @@ public class Wallet {
     @Override
     public String toString() {
         return "Wallet{" +
-        "id=" + id + '\'' +
-        ", userId=" + userId + '\'' +
-        ", name=" + name + '\'' +
-        ", balance=" + balance + '\'' +
-        ", currency=" + currency + '\'' +
-        '}';
+                "id=" + id + '\'' +
+                ", userId=" + userId + '\'' +
+                ", name=" + name + '\'' +
+                ", balance=" + balance + '\'' +
+                ", currency=" + currency + '\'' +
+                '}';
     }
 
 }

@@ -9,7 +9,7 @@ import java.util.UUID;
 
 /**
  * Запись об операции в кошельке.
- *
+ * <p>
  * Транзакция – иммутабельный объект, после создание не меняется.
  * Все поля – private final, нет сеттеров. Создается через {@link Builder}.
  */
@@ -21,7 +21,7 @@ public class Transaction {
     @Column(name = "id")
     private UUID id;
 
-    @Column(name = "wallet_id",  nullable = false)
+    @Column(name = "wallet_id", nullable = false)
     private UUID walletId;                // кошелек владельца операции
 
     @Column(name = "counterparty_wallet_id")
@@ -37,10 +37,11 @@ public class Transaction {
     @Column(name = "description")
     private String description;            // описание операции (опционально)
 
-    @Column(name = "created_at",  nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    protected Transaction() {}
+    protected Transaction() {
+    }
 
     // Приватный конструктор для создания через Builder
 
@@ -91,8 +92,10 @@ public class Transaction {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Transaction that = (Transaction) o;
         return Objects.equals(id, that.id);
     }
@@ -132,12 +135,12 @@ public class Transaction {
         private BigDecimal amount;
 
         // Автоматические поля
-        private UUID id =  UUID.randomUUID();
+        private UUID id = UUID.randomUUID();
         private LocalDateTime createdAt = LocalDateTime.now();
 
         // Опциональные поля
         private UUID counterpartyWalletId;
-        private  String decription;
+        private String decription;
 
         /**
          * Builder с обязательными полями,
@@ -178,7 +181,7 @@ public class Transaction {
          * Можно добавить валидацию перед созданием.
          */
         public Transaction build() {
-            if ((type == TransactionType.TRANSACTION_IN ||  type == TransactionType.TRANSACTION_OUT)
+            if ((type == TransactionType.TRANSACTION_IN || type == TransactionType.TRANSACTION_OUT)
                     && counterpartyWalletId == null) {
                 throw new IllegalStateException("Для перевода необходимо указать counterpartyWalletId");
             }

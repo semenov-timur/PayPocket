@@ -26,7 +26,7 @@ public class WalletApiController {
     private final WalletService walletService;
     private final UserService userService;
 
-    public  WalletApiController(WalletService walletService, UserService userService) {
+    public WalletApiController(WalletService walletService, UserService userService) {
         this.walletService = walletService;
         this.userService = userService;
     }

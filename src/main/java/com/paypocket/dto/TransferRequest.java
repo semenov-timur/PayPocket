@@ -21,12 +21,15 @@ public class TransferRequest {
     public String getRecipientUsername() {
         return recipientUsername;
     }
+
     public void setRecipientUsername(String recipientUsername) {
         this.recipientUsername = recipientUsername;
     }
+
     public BigDecimal getAmount() {
         return amount;
     }
+
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }

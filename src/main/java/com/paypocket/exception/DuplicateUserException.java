@@ -20,6 +20,6 @@ public class DuplicateUserException extends PayPocketException {
     }
 
     public String getValue() {
-        return  value;
+        return value;
     }
 }

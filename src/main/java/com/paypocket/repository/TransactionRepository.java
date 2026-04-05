@@ -7,8 +7,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,8 +47,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     /**
      * Находит транзакции кошелька определенного типа.
      *
-     * @param walletId  id кошелька
-     * @param type      тип транзакции (фильтр)
+     * @param walletId id кошелька
+     * @param type     тип транзакции (фильтр)
      * @return отфильтрованный список транзакций кошелька
      */
     List<Transaction> findByWalletIdAndTypeOrderByCreatedAtDesc(UUID walletId, TransactionType type);

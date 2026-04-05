@@ -20,9 +20,11 @@ public class ErrorResponse {
     public String getCode() {
         return code;
     }
+
     public String getMessage() {
         return message;
     }
+
     public LocalDateTime getTimestamp() {
         return timestamp;
     }

@@ -20,11 +20,11 @@ public class WalletResponse {
      * Фабричный метод.
      * Конвертирует Wallet в безопасный для API объект.
      */
-    public static  WalletResponse from(Wallet wallet) {
+    public static WalletResponse from(Wallet wallet) {
         WalletResponse response = new WalletResponse();
         response.id = wallet.getId();
-        response.name =  wallet.getName();
-        response.balance =  wallet.getBalance();
+        response.name = wallet.getName();
+        response.balance = wallet.getBalance();
         response.currency = wallet.getCurrency().name();
         response.createdAt = wallet.getCreatedAt();
         return response;
@@ -33,15 +33,19 @@ public class WalletResponse {
     public UUID getId() {
         return id;
     }
+
     public String getName() {
         return name;
     }
+
     public BigDecimal getBalance() {
         return balance;
     }
+
     public String getCurrency() {
         return currency;
     }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }

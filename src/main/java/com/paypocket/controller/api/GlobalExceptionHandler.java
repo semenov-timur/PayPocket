@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
 
 import java.util.stream.Collectors;
 
@@ -17,6 +16,7 @@ import java.util.stream.Collectors;
  * Глобальный обработчик ошибок для REST API.
  *
  * <p>@RestControllerAdvice — Spring перехватывает исключения из ВСЕХ
+ *
  * @RestController и направляет в соответствующий @ExceptionHandler.
  * Клиент всегда получает структурированный JSON с кодом ошибки и сообщением.</p>
  */

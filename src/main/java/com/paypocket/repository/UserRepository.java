@@ -21,7 +21,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     /**
      * Ищет пользователя по username.
-     *
+     * <p>
      * Spring генерирует: SELECT * FROM users WHERE LOWER(username) = LOWER(?)
      *
      * @param username имя пользователя
@@ -33,7 +33,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * Проверяет, занят ли username?
      *
      * <p>Spring генерирует: SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END
-     *                    FROM users WHERE LOWER(username) = LOWER(?)</p>
+     * FROM users WHERE LOWER(username) = LOWER(?)</p>
      *
      * @param username имя пользователя
      * @return true, если занят

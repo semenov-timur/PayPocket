@@ -17,8 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -65,9 +63,9 @@ public class WalletService {
     /**
      * Создает новый кошелек для пользователя.
      *
-     * @param userId    id владельца
-     * @param name      название кошелька
-     * @param currency  валюта кошелька (RUB, USD, EUR)
+     * @param userId   id владельца
+     * @param name     название кошелька
+     * @param currency валюта кошелька (RUB, USD, EUR)
      * @return созданный кошелек с нулевым балансом
      */
     @Transactional
@@ -81,19 +79,19 @@ public class WalletService {
             }
         }
 
-       Wallet wallet = new Wallet(userId, name, currency);
-       walletRepository.save(wallet);
+        Wallet wallet = new Wallet(userId, name, currency);
+        walletRepository.save(wallet);
 
-       log.info("Wallet created: id – {}, userId – {}, name – {}, currency – {}",
-               wallet.getId(), userId, name, currency);
-       return wallet;
+        log.info("Wallet created: id – {}, userId – {}, name – {}, currency – {}",
+                wallet.getId(), userId, name, currency);
+        return wallet;
     }
 
     /**
      * По умолчанию создает рублевый кошелек.
      *
-     * @param userId    id владельца
-     * @param name      название кошелька
+     * @param userId id владельца
+     * @param name   название кошелька
      * @return созданный кошелек с нулевым балансом
      */
     @Transactional
@@ -110,11 +108,11 @@ public class WalletService {
      *
      * <p>Операция создает запись транзакции типа DEPOSIT для истории.</p>
      *
-     * @param walletId  id кошелька
-     * @param amount    сумма пополнения (> 0)
+     * @param walletId id кошелька
+     * @param amount   сумма пополнения (> 0)
      * @return кошелёк с обновленным балансом
      * @throws com.paypocket.exception.WalletNotFoundException если кошелек не найден
-     * @throws InvalidAmountException если сумма <= 0
+     * @throws InvalidAmountException                          если сумма <= 0
      */
     @Transactional
     public Wallet deposit(UUID walletId, BigDecimal amount) {
@@ -142,11 +140,11 @@ public class WalletService {
      *
      * <p>Операция создает запись транзакции типа WITHDRAW для истории.</p>
      *
-     * @param walletId  id кошелька
-     * @param amount    сумма для снятия
+     * @param walletId id кошелька
+     * @param amount   сумма для снятия
      * @return кошелек с обновленным балансов
      * @throws com.paypocket.exception.WalletNotFoundException если кошелек не найден
-     * @throws InvalidAmountException если сумма <= 0
+     * @throws InvalidAmountException                          если сумма <= 0
      */
     @Transactional
     public Wallet withdraw(UUID walletId, BigDecimal amount) {
@@ -162,7 +160,7 @@ public class WalletService {
 
         log.info("Withdraw: walletId - {}, amount – {}, newBalance – {}",
                 walletId, amount, wallet.getBalance());
-        return  wallet;
+        return wallet;
     }
 
     // ======================================
@@ -186,14 +184,14 @@ public class WalletService {
      * <p>Создаёт ДВЕ записи транзакций (двойная запись):
      * TRANSFER_OUT у отправителя, TRANSFER_IN у получателя.</p>
      *
-     * @param fromWalletId  id кошелька отправителя
-     * @param toWalletId    id кошелька получателя
-     * @param amount        сумма перевода
+     * @param fromWalletId id кошелька отправителя
+     * @param toWalletId   id кошелька получателя
+     * @param amount       сумма перевода
      * @return результат перевода с полученными балансами
-     * @throws InvalidAmountException                               если один из кошельков не найден
-     * @throws SelfTransferException                                если отправитель и получатель совпадают
-     * @throws com.paypocket.exception.WalletNotFoundException      если сумма перевода <= 0
-     * @throws com.paypocket.exception.InsufficientFundsException   если в кошельке недостаточно средств для перевода
+     * @throws InvalidAmountException                             если один из кошельков не найден
+     * @throws SelfTransferException                              если отправитель и получатель совпадают
+     * @throws com.paypocket.exception.WalletNotFoundException    если сумма перевода <= 0
+     * @throws com.paypocket.exception.InsufficientFundsException если в кошельке недостаточно средств для перевода
      */
     @Transactional
     public TransferResult transfer(UUID fromWalletId, UUID toWalletId, BigDecimal amount) {
@@ -311,7 +309,7 @@ public class WalletService {
         getWalletOrThrow(walletId);
         return this.transactionRepository.findByWalletId(
                 walletId,
-                PageRequest.of(pageNumber, pageSize,  Sort.by("createdAt").descending())
+                PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").descending())
         );
     }
 
@@ -336,12 +334,12 @@ public class WalletService {
      * Находит кошелек или бросает исключение.
      */
     private Wallet getWalletOrThrow(UUID walletId) {
-        return  this.walletRepository.findById(walletId)
+        return this.walletRepository.findById(walletId)
                 .orElseThrow(() -> new WalletNotFoundException(walletId));
     }
 
     private void validateAmount(BigDecimal amount) {
-        if (amount == null ||  amount.compareTo(BigDecimal.ZERO) <= 0 || amount.scale() > 2) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0 || amount.scale() > 2) {
             throw new InvalidAmountException(amount);
         }
     }

@@ -8,7 +8,7 @@ import com.paypocket.model.Currency;
  */
 public class WalletAlreadyExistsException extends PayPocketException {
 
-    public  WalletAlreadyExistsException(Currency currency) {
+    public WalletAlreadyExistsException(Currency currency) {
         super(String.format(
                 "У вас уже есть кошелек в валюте: %s", currency.getDescription()
         ));

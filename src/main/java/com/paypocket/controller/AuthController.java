@@ -88,7 +88,7 @@ public class AuthController {
 
     @GetMapping("/")
     public String home(HttpSession session) {
-        if  (session.getAttribute("currentUser") != null) {
+        if (session.getAttribute("currentUser") != null) {
             return "redirect:/dashboard";
         }
         return "redirect:/login";

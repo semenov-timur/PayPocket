@@ -21,6 +21,7 @@ public class DepositRequest {
     public BigDecimal getAmount() {
         return amount;
     }
+
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }

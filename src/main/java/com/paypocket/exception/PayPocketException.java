@@ -13,7 +13,7 @@ public class PayPocketException extends RuntimeException {
         super(message);
     }
 
-    public  PayPocketException(String message, Throwable cause) {
+    public PayPocketException(String message, Throwable cause) {
         super(message, cause);
     }
 }

@@ -19,7 +19,7 @@ public class TransactionResponse {
      * Фабричный метод.
      * Конвертирует Transaction в безопасный для API объект.
      */
-    public static  TransactionResponse from(Transaction transaction) {
+    public static TransactionResponse from(Transaction transaction) {
         TransactionResponse response = new TransactionResponse();
         response.type = transaction.getType().name();
         response.amount = transaction.getAmount();
@@ -31,12 +31,15 @@ public class TransactionResponse {
     public String getType() {
         return type;
     }
+
     public BigDecimal getAmount() {
         return amount;
     }
+
     public String getDescription() {
         return description;
     }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }

@@ -25,7 +25,7 @@ import java.util.UUID;
  * выполняются в readOnly транзакции (это оптимизация для SELECT).</p>
  */
 @Service
-@Transactional(readOnly=true)
+@Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;
@@ -40,7 +40,7 @@ public class UserService {
      *
      * @param userRepository репозиторий пользователей
      */
-    public  UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
@@ -50,9 +50,9 @@ public class UserService {
      * <p>Проверяет корректность и уникальность
      * username и email перед созданием.</p>
      *
-     * @param username  имя пользователя
-     * @param email     электронная почта
-     * @param password  пароль
+     * @param username имя пользователя
+     * @param email    электронная почта
+     * @param password пароль
      * @return созданный пользователь
      * @throws DuplicateUserException если username или email уже заняты
      */
@@ -64,11 +64,10 @@ public class UserService {
         // Проверка уникальности
         if (userRepository.existsByUsernameIgnoreCase(username)) {
             log.warn("Registration taken – username taken: {}", username);
-            throw new DuplicateUserException("username",  username);
-        }
-        else if (userRepository.existsByEmail(email)) {
+            throw new DuplicateUserException("username", username);
+        } else if (userRepository.existsByEmail(email)) {
             log.warn("Registration taken – email taken: {}", email);
-            throw new DuplicateUserException("email",  email);
+            throw new DuplicateUserException("email", email);
         }
 
         // Создание и сохранение
@@ -86,7 +85,7 @@ public class UserService {
      * @param username имя пользователя
      * @param password пароль
      * @return авторизованный пользователь
-     * @throws UserNotFoundException если пользователь не найден
+     * @throws UserNotFoundException    если пользователь не найден
      * @throws IllegalArgumentException если пароль неверный
      */
     public User authenticate(String username, String password) {
@@ -94,14 +93,14 @@ public class UserService {
                 .orElseThrow(() -> {
                     log.warn("Auth failed – user not found: {}", username);
                     return new UserNotFoundException(username);
-                } );
+                });
 
-        if  (!user.getPassword().equals(password)) {
+        if (!user.getPassword().equals(password)) {
             log.warn("Auth failed – wrong password: username – {}", username);
             throw new IllegalArgumentException("Неверный пароль!");
         }
 
-        log.info("User authenticated: username = {}",  username);
+        log.info("User authenticated: username = {}", username);
         return user;
     }
 

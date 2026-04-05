@@ -11,7 +11,7 @@ import java.util.UUID;
 
 /**
  * Пользователь системы PayPocket.
- *
+ * <p>
  * Каждый пользователь идентифицируется уникальным UUID.
  * Имя пользователя и e-mail также должны быть уникальными в системе –
  * однако это проверяется на сервиса/БД, а не в самой модели пользователя.
@@ -23,10 +23,10 @@ public class User {
     @Column(name = "id")
     private UUID id;                  // final – идентификатор не изменяется после создания
 
-    @Column(name = "username", unique = true,  nullable = false, length = 50)
+    @Column(name = "username", unique = true, nullable = false, length = 50)
     private String username;
 
-    @Column(name = "email", unique = true,  nullable = false, length = 50)
+    @Column(name = "email", unique = true, nullable = false, length = 50)
     private String email;
 
     @Column(name = "password", nullable = false)
@@ -38,7 +38,8 @@ public class User {
     /**
      * Конструктор без аргументов – для JPA / Hibernate.
      */
-    protected User() {}
+    protected User() {
+    }
 
     /**
      * Конструктор для создания НОВОГО пользователя.
@@ -103,8 +104,10 @@ public class User {
     // ––– equals / hashCode по id –––
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         User user = (User) o;
         return Objects.equals(this.id, user.id);
     }

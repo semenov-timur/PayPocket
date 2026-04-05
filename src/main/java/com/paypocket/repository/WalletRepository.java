@@ -37,8 +37,8 @@ public interface WalletRepository extends JpaRepository<Wallet, UUID> {
      * Используется внутри транзакции для предотвращения
      * конкурентных изменений баланса.
      *
-     * @param walletId  id кошелька
-     * @return          кошелёк или пустой Optional
+     * @param walletId id кошелька
+     * @return кошелёк или пустой Optional
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT w FROM Wallet w WHERE w.id = :id")
