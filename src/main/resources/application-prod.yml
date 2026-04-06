@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://db:5432/paypocket
+    username: postgres
+    password: postgres
+
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    com.paypocket: INFO
+    org.hibernate.SQL: WARN
