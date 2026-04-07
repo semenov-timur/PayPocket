@@ -66,6 +66,8 @@
 paypocket/
 ├── build.gradle
 ├── settings.gradle
+├── Dockerfile
+├── docker-compose.yml
 ├── README.md
 └── src/main/
     ├── java/com/paypocket/
@@ -131,18 +133,27 @@ paypocket/
 
 ## Как запустить
 
-### Требования
-- Java 17+
-- Локально установленный PostgreSQL
+### Вариант 1: Docker Compose (рекомендуется)
+
+```bash
+git clone https://github.com/semenov-timur/paypocket.git
+cd paypocket
+docker-compose up --build -d
+```
+
+### Вариант 2: Локальная разработка
+
+Требования: Java 17+, PostgreSQL
 
 ```bash
 git clone https://github.com/semenov-timur/paypocket.git
 cd paypocket
 
-# Создать базу данных
-psql -U postgres -c "CREATE DATABASE paypocket;"
+# Запустить БД в контейнере или локально
+docker-compose up -d db # запуск в контейнере
+# или локально: psql -U postgres -c "CREATE DATABASE paypocket;"
 
-# Запустить приложение (Flyway создаст таблицы автоматически)
+# Запустить приложение
 ./gradlew bootRun
 ```
 
@@ -240,7 +251,7 @@ git checkout v3.0
 - [x] Flyway миграции
 - [x] Глобальная обработка ошибок
 - [x] DTO с валидацией (Jakarta Validation)
-- [ ] Docker-контейнер для приложения
+- [x] Docker-контейнер для приложения
 - [ ] Юнит-тесты (JUnit 5 + Mockito)
 - [ ] Конвертация валют
 
