@@ -2,52 +2,95 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PayPocket — Пополнение</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<div class="navbar">
-    <span class="brand">💳 PayPocket</span>
-    <div>
-        <a th:href="@{/dashboard}">Дашборд</a>
-        <a th:href="@{/deposit}">Пополнить</a>
-        <a th:href="@{/transfer}">Перевести</a>
-        <a th:href="@{/logout}">Выйти</a>
-    </div>
+
+<div class="app">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">PayPocket</div>
+
+        <div class="sidebar-user">
+            <div class="avatar">P</div>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a th:href="@{/dashboard}">
+                    <span class="nav-icon">⊞</span> Главная
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/deposit}" class="active">
+                    <span class="nav-icon">＋</span> Пополнить
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/transfer}">
+                    <span class="nav-icon">↗</span> Перевести
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-logout">
+            <a th:href="@{/logout}">Выйти</a>
+        </div>
+    </aside>
+
+    <!-- ── Main ── -->
+    <main class="main">
+
+        <h1 class="page-title">Пополнение</h1>
+
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <!-- Wallet summary (first wallet preview) -->
+        <div class="wallet-summary" th:if="${!wallets.isEmpty()}">
+            <div class="ws-label">Счёт для пополнения</div>
+            <div class="ws-name" th:text="${wallets[0].name}">Название счёта</div>
+            <div class="ws-bal">
+                <span th:text="${wallets[0].currency == 'USD' ? '$' : (wallets[0].currency == 'EUR' ? '€' : '₽')}">$</span><!--
+                --><span th:text="${wallets[0].balance}">0.00</span>
+            </div>
+        </div>
+
+        <div class="form-card">
+
+            <form th:action="@{/deposit}" method="post">
+
+                <div class="field">
+                    <select id="walletId" name="walletId" required>
+                        <option th:each="wallet : ${wallets}"
+                                th:value="${wallet.id}"
+                                th:text="${wallet.name + ' — ' + wallet.balance + ' ' + wallet.currency}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <input type="number"
+                           id="amount" name="amount"
+                           step="0.01" min="0.01"
+                           required
+                           placeholder="Сумма пополнения">
+                </div>
+
+                <div style="margin-top: 6px;">
+                    <button type="submit" class="btn btn-dark">Пополнить</button>
+                </div>
+
+            </form>
+
+        </div>
+
+        <a th:href="@{/dashboard}" class="back-link">← Назад</a>
+
+    </main>
 </div>
 
-<div class="container">
-    <div class="card" style="max-width: 500px; margin: 40px auto;">
-        <h2>Пополнение кошелька</h2>
-
-        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-
-        <form th:action="@{/deposit}" method="post">
-            <div class="form-group">
-                <label for="walletId">Кошелёк</label>
-                <select id="walletId" name="walletId" required>
-                    <option th:each="wallet : ${wallets}"
-                            th:value="${wallet.id}"
-                            th:text="${wallet.name + ' — ' + wallet.balance + ' ' + wallet.currency}">
-                    </option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="amount">Сумма</label>
-                <input type="number" id="amount" name="amount"
-                       step="0.01" min="0.01" required placeholder="1000.00">
-            </div>
-
-            <button type="submit" class="btn btn-success" style="width: 100%;">
-                Пополнить
-            </button>
-        </form>
-
-        <p style="text-align: center; margin-top: 15px;">
-            <a th:href="@{/dashboard}">← Назад</a>
-        </p>
-    </div>
-</div>
 </body>
 </html>

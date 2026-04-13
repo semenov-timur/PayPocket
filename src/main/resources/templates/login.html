@@ -2,47 +2,50 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PayPocket — Вход</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<div class="navbar">
-    <span class="brand">💳 PayPocket</span>
-    <div>
-        <a th:href="@{/login}">Войти</a>
-        <a th:href="@{/register}">Регистрация</a>
-    </div>
-</div>
 
-<div class="container">
-    <div class="card" style="max-width: 400px; margin: 40px auto;">
-        <h2>Вход</h2>
+<div class="auth-wrap">
 
-        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+    <div class="auth-logo">PayPocket</div>
+
+    <div class="auth-card">
+        <h1>Вход</h1>
+
+        <div th:if="${error}"   class="alert alert-error"   th:text="${error}"></div>
         <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
 
         <form th:action="@{/login}" method="post">
-            <div class="form-group">
-                <label for="username">Имя пользователя</label>
-                <input type="text" id="username" name="username"
-                       required placeholder="alice">
+
+            <div class="field">
+                <input type="text"
+                       id="username" name="username"
+                       required
+                       placeholder="Имя пользователя">
             </div>
 
-            <div class="form-group">
-                <label for="password">Пароль</label>
-                <input type="password" id="password" name="password"
-                       required placeholder="Пароль">
+            <div class="field">
+                <input type="password"
+                       id="password" name="password"
+                       required
+                       placeholder="Пароль">
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">
-                Войти
-            </button>
+            <div style="margin-top: 6px;">
+                <button type="submit" class="btn btn-dark">Войти</button>
+            </div>
+
         </form>
-
-        <p style="text-align: center; margin-top: 15px;">
-            Нет аккаунта? <a th:href="@{/register}">Зарегистрироваться</a>
-        </p>
     </div>
+
+    <div class="auth-foot">
+        Нет аккаунта? <a th:href="@{/register}">Зарегистрироваться</a>
+    </div>
+
 </div>
+
 </body>
 </html>

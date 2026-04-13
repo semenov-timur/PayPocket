@@ -2,68 +2,119 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>PayPocket — Дашборд</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PayPocket — Главная</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<div class="navbar">
-    <span class="brand">💳 PayPocket</span>
-    <div>
-        <a th:href="@{/dashboard}">Дашборд</a>
-        <a th:href="@{/deposit}">Пополнить</a>
-        <a th:href="@{/transfer}">Перевести</a>
-        <a th:href="@{/logout}">Выйти</a>
-    </div>
-</div>
 
-<div class="container">
-    <h1 style="margin: 20px 0;">
-        Привет, <span th:text="${user.username}">username</span>!
-    </h1>
+<div class="app">
 
-    <!-- Flash-сообщения -->
-    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">PayPocket</div>
 
-    <!-- Кошельки -->
-    <div th:if="${wallets.isEmpty()}" class="card">
-        <p>У вас пока нет кошельков. Создайте первый!</p>
-    </div>
-
-    <div th:each="wallet : ${wallets}" class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h2 th:text="${wallet.name}">Название</h2>
-                <span class="balance" th:text="${wallet.balance}">0.00</span>
-                <span th:text="${wallet.currency}">RUB</span>
-            </div>
-            <a th:href="@{/history/{id}(id=${wallet.id})}" class="btn btn-primary">
-                История
-            </a>
+        <div class="sidebar-user">
+            <div class="avatar"
+                 th:text="${#strings.toUpperCase(#strings.substring(user.username, 0, 1))}">U</div>
+            <span class="sidebar-username" th:text="${user.username}">username</span>
         </div>
-    </div>
 
-    <!-- Форма создания кошелька -->
-    <div class="card">
-        <h2>Новый кошелёк</h2>
-        <form th:action="@{/wallets/create}" method="post"
-              style="display: flex; gap: 10px; align-items: end;">
-            <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                <label for="walletName">Название</label>
-                <input type="text" id="walletName" name="name"
-                       required placeholder="Основной">
+        <ul class="sidebar-nav">
+            <li>
+                <a th:href="@{/dashboard}" class="active">
+                    <span class="nav-icon">⊞</span> Главная
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/deposit}">
+                    <span class="nav-icon">＋</span> Пополнить
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/transfer}">
+                    <span class="nav-icon">↗</span> Перевести
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-logout">
+            <a th:href="@{/logout}">Выйти</a>
+        </div>
+    </aside>
+
+    <!-- ── Main ── -->
+    <main class="main">
+
+        <h1 class="page-title">
+            Привет, <span th:text="${user.username}">username</span>!
+        </h1>
+
+        <!-- Flash messages -->
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}"   class="alert alert-error"   th:text="${error}"></div>
+
+        <!-- Wallet cards -->
+        <div th:if="${!wallets.isEmpty()}" class="wallets-grid">
+            <div th:each="wallet : ${wallets}" class="wallet-card">
+                <div>
+                    <div class="wc-label" th:text="${wallet.name}">Название счёта</div>
+                    <div class="wc-balance">
+                        <span th:text="${wallet.currency == 'USD' ? '$' : (wallet.currency == 'EUR' ? '€' : '₽')}">$</span><!--
+                        --><span th:text=" ${wallet.balance}">0.00</span>
+                    </div>
+                    <div class="wc-currency" th:text="${wallet.currency}">USD</div>
+                </div>
+                <a th:href="@{/history/{id}(id=${wallet.id})}" class="btn btn-light btn-sm">
+                    История
+                </a>
             </div>
-            <div class="form-group" style="margin-bottom: 0;">
-                <label for="currency">Валюта</label>
-                <select id="currency" name="currency">
-                    <option value="RUB">RUB ₽</option>
-                    <option value="USD">USD $</option>
-                    <option value="EUR">EUR €</option>
-                </select>
+        </div>
+
+        <div th:if="${wallets.isEmpty()}" class="card">
+            <p class="empty">У вас пока нет счетов. Создайте первый!</p>
+        </div>
+
+        <!-- Quick actions -->
+        <div th:unless="${wallets.isEmpty()}">
+            <p class="section-label">Операции</p>
+            <div class="action-row">
+                <a th:href="@{/transfer}" class="action-btn">
+                    <span class="action-icon">↗</span> Перевести
+                </a>
+                <a th:href="@{/deposit}" class="action-btn">
+                    <span class="action-icon">＋</span> Пополнить
+                </a>
             </div>
-            <button type="submit" class="btn btn-success">Создать</button>
-        </form>
-    </div>
+        </div>
+
+        <!-- New wallet form -->
+        <p class="section-label">Новый счёт</p>
+        <div class="card">
+            <div class="card-title">Создать счёт</div>
+            <form th:action="@{/wallets/create}" method="post">
+                <div class="inline-form">
+                    <div class="field">
+                        <input type="text" name="name"
+                               required
+                               placeholder="Название счёта">
+                    </div>
+                    <div class="field" style="max-width: 140px;">
+                        <select name="currency">
+                            <option value="RUB">₽ RUB</option>
+                            <option value="USD">$ USD</option>
+                            <option value="EUR">€ EUR</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-dark btn-sm" style="height: 48px; padding: 0 22px;">
+                        Создать
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </main>
 </div>
+
 </body>
 </html>

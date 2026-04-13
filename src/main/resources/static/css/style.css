@@ -1,135 +1,548 @@
-/* static/css/style.css */
+/* ============================================================
+   PayPocket — Web UI
+   ============================================================ */
 
-* {
+*, *::before, *::after {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+}
+
+:root {
+    --bg:           #f2f2f7;
+    --surface:      #ffffff;
+    --input-bg:     #ebebeb;
+    --input-focus:  #e0e0e0;
+    --border:       #e5e5ea;
+    --text:         #1c1c1e;
+    --text-sub:     #8e8e93;
+    --btn-dark:     #1c1c1e;
+    --btn-light:    #e8e8e8;
+    --income:       #34c759;
+    --expense:      #ff3b30;
+    --radius-sm:    8px;
+    --radius-md:    14px;
+    --radius-lg:    20px;
+    --shadow:       0 2px 14px rgba(0, 0, 0, .07);
+    --sidebar-w:    240px;
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #f5f5f5;
-    color: #333;
-    line-height: 1.6;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
 }
 
-.container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
+/* ─── Auth layout ─────────────────────────────────────────── */
+
+.auth-wrap {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--bg);
 }
 
-/* Навигация */
-.navbar {
-    background-color: #1a1a2e;
-    color: white;
-    padding: 15px 20px;
+.auth-logo {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 36px;
+    letter-spacing: -0.5px;
+}
+
+.auth-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 32px 28px 28px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: var(--shadow);
+}
+
+.auth-card h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 22px;
+}
+
+/* ─── Alerts ──────────────────────────────────────────────── */
+
+.alert {
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    margin-bottom: 14px;
+}
+.alert-error   { background: #fff0ee; color: var(--expense); }
+.alert-success { background: #edfaf2; color: #1a8f45; }
+
+/* ─── Form fields ─────────────────────────────────────────── */
+
+.field {
+    margin-bottom: 10px;
+}
+
+.field input,
+.field select {
+    width: 100%;
+    background: var(--input-bg);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    font-size: 15px;
+    color: var(--text);
+    outline: none;
+    transition: background .15s;
+    appearance: none;
+}
+
+.field input::placeholder,
+.field select::placeholder {
+    color: var(--text-sub);
+}
+
+.field input:focus,
+.field select:focus {
+    background: var(--input-focus);
+}
+
+/* ─── Buttons ─────────────────────────────────────────────── */
+
+.btn {
+    display: inline-block;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: opacity .15s;
+    line-height: 1;
+}
+.btn:hover { opacity: .82; }
+
+.btn-dark  { background: var(--btn-dark);  color: #fff; }
+.btn-light { background: var(--btn-light); color: var(--text); }
+.btn-sm    { width: auto; padding: 9px 18px; font-size: 13px; }
+
+/* ─── Auth footer ─────────────────────────────────────────── */
+
+.auth-foot {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-sub);
+}
+.auth-foot a {
+    color: var(--text);
+    font-weight: 600;
+    text-decoration: none;
+}
+.auth-foot a:hover { text-decoration: underline; }
+
+/* ─── App layout ──────────────────────────────────────────── */
+
+.app {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 18px 24px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.sidebar-logo {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 28px;
+    letter-spacing: -0.3px;
+    padding-left: 4px;
+}
+
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 4px 20px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--input-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+    color: var(--text);
+}
+
+.sidebar-username {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.sidebar-nav {
+    list-style: none;
+    flex: 1;
+}
+
+.sidebar-nav li {
+    margin-bottom: 2px;
+}
+
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--text-sub);
+    font-size: 14px;
+    font-weight: 500;
+    transition: background .15s, color .15s;
+}
+
+.sidebar-nav a:hover,
+.sidebar-nav a.active {
+    background: var(--input-bg);
+    color: var(--text);
+}
+
+.nav-icon {
+    font-size: 16px;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.sidebar-logout {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.sidebar-logout a {
+    display: block;
+    text-align: center;
+    padding: 11px;
+    border-radius: var(--radius-sm);
+    background: var(--input-bg);
+    color: var(--text-sub);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background .15s, color .15s;
+}
+.sidebar-logout a:hover {
+    background: #ddd;
+    color: var(--text);
+}
+
+/* Main content area */
+.main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    padding: 36px 40px;
+}
+
+.page-title {
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin-bottom: 22px;
+}
+
+.section-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-sub);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 10px;
+    margin-top: 26px;
+}
+
+/* ─── Wallet cards ────────────────────────────────────────── */
+
+.wallets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.wallet-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.navbar a {
-    color: #e0e0e0;
-    text-decoration: none;
-    margin-left: 20px;
+.wc-label {
+    font-size: 12px;
+    color: var(--text-sub);
+    margin-bottom: 4px;
 }
 
-.navbar a:hover {
-    color: white;
+.wc-balance {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1;
 }
 
-.navbar .brand {
-    font-size: 1.3em;
-    font-weight: bold;
-    color: #ffd700;
+.wc-currency {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin-top: 4px;
 }
 
-/* Карточки */
-.card {
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+/* ─── Quick action buttons ────────────────────────────────── */
+
+.action-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
 }
 
-.card h2 {
-    margin-bottom: 10px;
-    color: #1a1a2e;
-}
-
-/* Формы */
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
-}
-
-.form-group input,
-.form-group select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-}
-
-.btn {
-    display: inline-block;
-    padding: 10px 20px;
+.action-btn {
+    background: var(--surface);
     border: none;
-    border-radius: 4px;
-    font-size: 16px;
+    border-radius: var(--radius-md);
+    padding: 14px 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
     cursor: pointer;
     text-decoration: none;
-    color: white;
+    box-shadow: var(--shadow);
+    transition: background .15s;
 }
 
-.btn-primary { background-color: #1a1a2e; }
-.btn-primary:hover { background-color: #16213e; }
-.btn-success { background-color: #2ecc71; }
-.btn-danger { background-color: #e74c3c; }
-
-/* Таблицы */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
+.action-btn:hover {
+    background: var(--input-bg);
 }
 
-th, td {
-    padding: 10px 12px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
+.action-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--input-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
 }
 
-th {
-    background-color: #f8f9fa;
+/* ─── New wallet form ─────────────────────────────────────── */
+
+.card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+}
+
+.card-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+.inline-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.inline-form .field {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 130px;
+}
+
+/* ─── Form card (deposit / transfer) ─────────────────────── */
+
+.form-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 26px 24px;
+    box-shadow: var(--shadow);
+    max-width: 480px;
+}
+
+/* Wallet summary header inside form pages */
+.wallet-summary {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    max-width: 480px;
+}
+.ws-label  { font-size: 12px; color: var(--text-sub); }
+.ws-name   { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.ws-bal    { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
+.ws-cur    { font-size: 13px; color: var(--text-sub); margin-top: 4px; }
+
+/* ─── Transaction list ────────────────────────────────────── */
+
+.tx-list {
+    list-style: none;
+}
+
+.tx-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+}
+.tx-item:last-child { border-bottom: none; }
+
+.tx-info { display: flex; flex-direction: column; gap: 2px; }
+
+.tx-title {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.tx-desc {
+    font-size: 12px;
+    color: var(--text-sub);
+}
+
+.tx-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.tx-amount {
+    font-size: 14px;
     font-weight: 600;
 }
 
-/* Сообщения */
-.alert {
-    padding: 12px 15px;
-    border-radius: 4px;
-    margin-bottom: 15px;
+.tx-date {
+    font-size: 12px;
+    color: var(--text-sub);
 }
 
-.alert-success { background-color: #d4edda; color: #155724; }
-.alert-danger { background-color: #f8d7da; color: #721c24; }
+.income  { color: var(--income); }
+.expense { color: var(--expense); }
 
-/* Типы транзакций */
-.type-deposit, .type-transfer-in { color: #2ecc71; }
-.type-withdraw, .type-transfer-out { color: #e74c3c; }
+/* ─── Pagination ──────────────────────────────────────────── */
 
-/* Баланс */
-.balance {
-    font-size: 1.8em;
-    font-weight: bold;
-    color: #1a1a2e;
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding-top: 18px;
+    font-size: 14px;
+    color: var(--text-sub);
+}
+
+.pagination a {
+    color: var(--text);
+    text-decoration: none;
+    padding: 9px 18px;
+    background: var(--input-bg);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 14px;
+    transition: background .15s;
+}
+.pagination a:hover { background: #ddd; }
+
+/* ─── Empty state ─────────────────────────────────────────── */
+
+.empty {
+    text-align: center;
+    padding: 44px 20px;
+    color: var(--text-sub);
+    font-size: 15px;
+}
+
+/* ─── Back link ───────────────────────────────────────────── */
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    color: var(--text-sub);
+    text-decoration: none;
+    margin-top: 14px;
+}
+.back-link:hover { color: var(--text); }
+
+/* ─── Responsive ──────────────────────────────────────────── */
+
+@media (max-width: 800px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 14px 16px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        gap: 8px;
+    }
+
+    .sidebar-logo    { margin-bottom: 0; flex: 1; }
+    .sidebar-user    { padding: 0; margin: 0; border: none; }
+    .sidebar-nav     { display: flex; gap: 4px; flex: none; }
+    .sidebar-nav li  { margin-bottom: 0; }
+    .nav-icon        { display: none; }
+    .sidebar-logout  { padding: 0; border: none; margin: 0; }
+
+    .app  { flex-direction: column; }
+    .main { margin-left: 0; padding: 20px 16px; }
+
+    .wallets-grid { grid-template-columns: 1fr; }
+    .action-row   { flex-wrap: wrap; }
 }

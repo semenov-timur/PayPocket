@@ -2,54 +2,56 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PayPocket — Регистрация</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<div class="navbar">
-    <span class="brand">💳 PayPocket</span>
-    <div>
-        <a th:href="@{/login}">Войти</a>
-        <a th:href="@{/register}">Регистрация</a>
-    </div>
-</div>
 
-<div class="container">
-    <div class="card" style="max-width: 400px; margin: 40px auto;">
-        <h2>Регистрация</h2>
+<div class="auth-wrap">
 
-        <!-- Сообщение об ошибке (flash attribute) -->
-        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+    <div class="auth-logo">PayPocket</div>
+
+    <div class="auth-card">
+        <h1>Регистрация</h1>
+
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 
         <form th:action="@{/register}" method="post">
-            <div class="form-group">
-                <label for="username">Имя пользователя</label>
-                <input type="text" id="username" name="username"
+
+            <div class="field">
+                <input type="text"
+                       id="username" name="username"
                        required minlength="3" maxlength="50"
-                       placeholder="alice">
+                       placeholder="Имя пользователя">
             </div>
 
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email"
-                       required placeholder="alice@mail.com">
+            <div class="field">
+                <input type="email"
+                       id="email" name="email"
+                       required
+                       placeholder="Почта">
             </div>
 
-            <div class="form-group">
-                <label for="password">Пароль</label>
-                <input type="password" id="password" name="password"
-                       required minlength="4" placeholder="Минимум 4 символа">
+            <div class="field">
+                <input type="password"
+                       id="password" name="password"
+                       required minlength="4"
+                       placeholder="Пароль">
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">
-                Зарегистрироваться
-            </button>
+            <div style="margin-top: 6px;">
+                <button type="submit" class="btn btn-dark">Зарегистрироваться</button>
+            </div>
+
         </form>
-
-        <p style="text-align: center; margin-top: 15px;">
-            Уже есть аккаунт? <a th:href="@{/login}">Войти</a>
-        </p>
     </div>
+
+    <div class="auth-foot">
+        Уже есть аккаунт? <a th:href="@{/login}">Войти</a>
+    </div>
+
 </div>
+
 </body>
 </html>
