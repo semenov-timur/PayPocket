@@ -98,6 +98,17 @@ public class WalletApiController {
     }
 
     /**
+     * POST /api/v1/wallets/{id}/convert — конвертация между кошельками одного пользователя.
+     */
+    @PostMapping("/{id}/convert")
+    public ResponseEntity<ConversionResult> convert(
+            @PathVariable UUID id,
+            @Valid @RequestBody ConvertRequest request) {
+        ConversionResult result = walletService.convert(id, request.getToWalletId(), request.getAmount());
+        return ResponseEntity.ok(result);
+    }
+
+    /**
      * GET /api/v1/wallets/{id}/transactions — история операций.
      */
     @GetMapping("/{id}/transactions")
