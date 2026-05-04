@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PayPocket — Конвертация</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="app">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">PayPocket</div>
+
+        <div class="sidebar-user">
+            <div class="avatar"
+                 th:text="${#strings.toUpperCase(#strings.substring(user.username, 0, 1))}">U</div>
+            <span class="sidebar-username" th:text="${user.username}">username</span>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a th:href="@{/dashboard(walletId=${selectedWalletId})}">
+                    <span class="nav-icon">⊞</span> Главная
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/deposit(walletId=${selectedWalletId})}">
+                    <span class="nav-icon">＋</span> Пополнить
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/transfer(walletId=${selectedWalletId})}">
+                    <span class="nav-icon">↗</span> Перевести
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/convert(walletId=${selectedWalletId})}" class="active">
+                    <span class="nav-icon">⇄</span> Конвертировать
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-logout">
+            <a th:href="@{/logout}">Выйти</a>
+        </div>
+    </aside>
+
+    <!-- ── Main ── -->
+    <main class="main">
+
+        <h1 class="page-title">Конвертация</h1>
+
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <div class="rates-row" style="max-width: 480px; margin-bottom: 20px;">
+            <div class="rate-card">
+                <div class="rate-flag">🇺🇸</div>
+                <div class="rate-info">
+                    <div class="rate-code">USD</div>
+                    <div class="rate-value">1 $ = <strong th:text="${#numbers.formatDecimal(usdRate, 1, 2)}">90.00</strong> ₽</div>
+                </div>
+            </div>
+            <div class="rate-card">
+                <div class="rate-flag">🇪🇺</div>
+                <div class="rate-info">
+                    <div class="rate-code">EUR</div>
+                    <div class="rate-value">1 € = <strong th:text="${#numbers.formatDecimal(eurRate, 1, 2)}">100.00</strong> ₽</div>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${wallets.size() < 2}" class="form-card">
+            <p class="empty">Для конвертации нужны минимум два счёта в разных валютах.</p>
+            <a th:href="@{/wallets/new}" class="btn btn-dark" style="margin-top: 14px;">Создать счёт</a>
+        </div>
+
+        <div th:if="${wallets.size() >= 2}" class="form-card">
+
+            <form th:action="@{/convert}" method="post">
+
+                <div class="field">
+                    <label class="ws-label" style="color: var(--text-sub); display: block; margin-bottom: 6px;">Со счёта</label>
+                    <select id="fromWalletId" name="fromWalletId" required>
+                        <option th:each="wallet : ${wallets}"
+                                th:value="${wallet.id}"
+                                th:selected="${selectedWalletId != null and wallet.id == selectedWalletId}"
+                                th:text="${wallet.name + ' — ' + wallet.balance + ' ' + wallet.currency}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label class="ws-label" style="color: var(--text-sub); display: block; margin-bottom: 6px;">На счёт</label>
+                    <select id="toWalletId" name="toWalletId" required>
+                        <option th:each="wallet : ${wallets}"
+                                th:value="${wallet.id}"
+                                th:text="${wallet.name + ' — ' + wallet.balance + ' ' + wallet.currency}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <input type="number"
+                           id="amount" name="amount"
+                           step="0.01" min="0.01"
+                           required
+                           placeholder="Сумма списания (в валюте источника)">
+                </div>
+
+                <div style="margin-top: 6px;">
+                    <button type="submit" class="btn btn-dark">Конвертировать</button>
+                </div>
+
+            </form>
+
+        </div>
+
+        <a th:href="@{/dashboard}" class="back-link">← К главной</a>
+
+    </main>
+</div>
+
+</body>
+</html>

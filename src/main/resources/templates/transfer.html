@@ -15,23 +15,30 @@
         <div class="sidebar-logo">PayPocket</div>
 
         <div class="sidebar-user">
-            <div class="avatar">P</div>
+            <div class="avatar"
+                 th:text="${#strings.toUpperCase(#strings.substring(user.username, 0, 1))}">U</div>
+            <span class="sidebar-username" th:text="${user.username}">username</span>
         </div>
 
         <ul class="sidebar-nav">
             <li>
-                <a th:href="@{/dashboard}">
+                <a th:href="@{/dashboard(walletId=${selectedWalletId})}">
                     <span class="nav-icon">⊞</span> Главная
                 </a>
             </li>
             <li>
-                <a th:href="@{/deposit}">
+                <a th:href="@{/deposit(walletId=${selectedWalletId})}">
                     <span class="nav-icon">＋</span> Пополнить
                 </a>
             </li>
             <li>
-                <a th:href="@{/transfer}" class="active">
+                <a th:href="@{/transfer(walletId=${selectedWalletId})}" class="active">
                     <span class="nav-icon">↗</span> Перевести
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/convert(walletId=${selectedWalletId})}">
+                    <span class="nav-icon">⇄</span> Конвертировать
                 </a>
             </li>
         </ul>
@@ -48,53 +55,54 @@
 
         <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 
-        <!-- Sender wallet summary -->
-        <div class="wallet-summary" th:if="${!wallets.isEmpty()}">
-            <div class="ws-label">С счёта</div>
-            <div class="ws-name" th:text="${wallets[0].name}">Название счёта</div>
-            <div class="ws-bal">
-                <span th:text="${wallets[0].currency == 'USD' ? '$' : (wallets[0].currency == 'EUR' ? '€' : '₽')}">$</span><!--
-                --><span th:text="${wallets[0].balance}">0.00</span>
+        <div th:if="${wallet == null}" class="form-card">
+            <p class="empty">У вас пока нет счетов для перевода.</p>
+            <a th:href="@{/wallets/new}" class="btn btn-dark" style="margin-top: 14px;">Создать счёт</a>
+        </div>
+
+        <div th:if="${wallet != null}">
+            <!-- Sender wallet summary -->
+            <div class="wallet-summary">
+                <div class="ws-label">Со счёта</div>
+                <div class="ws-name" th:text="${wallet.name}">Название счёта</div>
+                <div class="ws-bal">
+                    <span th:text="${wallet.currency.name() == 'USD' ? '$' : (wallet.currency.name() == 'EUR' ? '€' : '₽')}">$</span><!--
+                    --><span th:text="${wallet.balance}">0.00</span>
+                </div>
+                <div class="ws-cur" th:text="${wallet.currency}">USD</div>
+            </div>
+
+            <div class="form-card">
+
+                <form th:action="@{/transfer}" method="post">
+
+                    <input type="hidden" name="fromWalletId" th:value="${wallet.id}">
+
+                    <div class="field">
+                        <input type="text"
+                               id="recipientUsername" name="recipientUsername"
+                               required
+                               placeholder="Имя получателя">
+                    </div>
+
+                    <div class="field">
+                        <input type="number"
+                               id="amount" name="amount"
+                               step="0.01" min="0.01"
+                               required
+                               placeholder="Сумма перевода">
+                    </div>
+
+                    <div style="margin-top: 6px;">
+                        <button type="submit" class="btn btn-dark">Отправить</button>
+                    </div>
+
+                </form>
+
             </div>
         </div>
 
-        <div class="form-card">
-
-            <form th:action="@{/transfer}" method="post">
-
-                <div class="field">
-                    <select id="fromWalletId" name="fromWalletId" required>
-                        <option th:each="wallet : ${wallets}"
-                                th:value="${wallet.id}"
-                                th:text="${wallet.name + ' — ' + wallet.balance + ' ' + wallet.currency}">
-                        </option>
-                    </select>
-                </div>
-
-                <div class="field">
-                    <input type="text"
-                           id="recipientUsername" name="recipientUsername"
-                           required
-                           placeholder="Имя получателя">
-                </div>
-
-                <div class="field">
-                    <input type="number"
-                           id="amount" name="amount"
-                           step="0.01" min="0.01"
-                           required
-                           placeholder="Сумма перевода">
-                </div>
-
-                <div style="margin-top: 6px;">
-                    <button type="submit" class="btn btn-dark">Отправить</button>
-                </div>
-
-            </form>
-
-        </div>
-
-        <a th:href="@{/dashboard}" class="back-link">← Назад</a>
+        <a th:href="@{/dashboard}" class="back-link">← К главной</a>
 
     </main>
 </div>

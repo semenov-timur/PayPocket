@@ -1,5 +1,6 @@
 package com.paypocket.service;
 
+import com.paypocket.dto.ConversionResult;
 import com.paypocket.dto.TransferResult;
 import com.paypocket.exception.*;
 import com.paypocket.model.Currency;
@@ -41,6 +42,7 @@ public class WalletService {
 
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
+    private final ExchangeRateService exchangeRateService;
 
     private final Logger log = LoggerFactory.getLogger(WalletService.class);
 
@@ -49,11 +51,14 @@ public class WalletService {
      *
      * @param walletRepository      репозиторий кошельков
      * @param transactionRepository репозиторий трензакций
+     * @param exchangeRateService   сервис курсов валют
      */
     public WalletService(WalletRepository walletRepository,
-                         TransactionRepository transactionRepository) {
+                         TransactionRepository transactionRepository,
+                         ExchangeRateService exchangeRateService) {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
+        this.exchangeRateService = exchangeRateService;
     }
 
     // ======================================
@@ -247,6 +252,104 @@ public class WalletService {
                 receiver.getBalance()
         );
     }
+
+    // ======================================
+    // КОНВЕРТАЦИЯ ВАЛЮТ
+    // ======================================
+
+    /**
+     * Конвертирует средства между двумя кошельками одного пользователя
+     * с разными валютами.
+     *
+     * <p>Списывает {@code amount} в валюте кошелька-источника, рассчитывает
+     * эквивалент по текущему курсу из {@link ExchangeRateService}
+     * и зачисляет получившуюся сумму на кошелёк-получатель.</p>
+     *
+     * <p>Создаёт две записи в истории: {@link TransactionType#CONVERT_OUT}
+     * у источника и {@link TransactionType#CONVERT_IN} у получателя.</p>
+     *
+     * @param fromWalletId id кошелька-источника
+     * @param toWalletId   id кошелька-получателя
+     * @param amount       сумма списания в валюте источника
+     * @return результат конвертации с применённым курсом и итоговыми балансами
+     * @throws InvalidAmountException     если сумма <= 0
+     * @throws SelfTransferException      если указан один и тот же кошелёк
+     * @throws WalletNotFoundException    если один из кошельков не найден
+     * @throws WalletOwnershipException   если кошельки принадлежат разным пользователям
+     * @throws CurrencyMismatchException  если валюты кошельков совпадают (нужно использовать transfer)
+     * @throws InsufficientFundsException если средств на кошельке-источнике недостаточно
+     */
+    @Transactional
+    public ConversionResult convert(UUID fromWalletId, UUID toWalletId, BigDecimal amount) {
+        validateAmount(amount);
+
+        if (fromWalletId.equals(toWalletId)) {
+            throw new SelfTransferException(fromWalletId);
+        }
+
+        UUID firstId = fromWalletId.compareTo(toWalletId) < 0 ? fromWalletId : toWalletId;
+        UUID secondId = fromWalletId.compareTo(toWalletId) < 0 ? toWalletId : fromWalletId;
+
+        walletRepository.findByIdForUpdate(firstId);
+        walletRepository.findByIdForUpdate(secondId);
+
+        Wallet source = walletRepository.findByIdForUpdate(fromWalletId)
+                .orElseThrow(() -> new WalletNotFoundException(fromWalletId));
+        Wallet target = walletRepository.findByIdForUpdate(toWalletId)
+                .orElseThrow(() -> new WalletNotFoundException(toWalletId));
+
+        if (!source.getUserId().equals(target.getUserId())) {
+            throw new WalletOwnershipException(fromWalletId, toWalletId);
+        }
+
+        if (source.getCurrency() == target.getCurrency()) {
+            throw new CurrencyMismatchException(source.getCurrency(), target.getCurrency());
+        }
+
+        if (source.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientFundsException(source.getBalance(), amount);
+        }
+
+        BigDecimal rate = exchangeRateService.getRate(source.getCurrency(), target.getCurrency());
+        BigDecimal convertedAmount = exchangeRateService.convert(amount, source.getCurrency(), target.getCurrency());
+
+        if (convertedAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidAmountException(convertedAmount);
+        }
+
+        source.withdraw(amount);
+        target.deposit(convertedAmount);
+
+        Transaction out = new Transaction.Builder(fromWalletId, TransactionType.CONVERT_OUT, amount)
+                .counterpartyWalletId(toWalletId)
+                .decscription(String.format("Конвертация в %s", target.getCurrency()))
+                .build();
+        transactionRepository.save(out);
+
+        Transaction in = new Transaction.Builder(toWalletId, TransactionType.CONVERT_IN, convertedAmount)
+                .counterpartyWalletId(fromWalletId)
+                .decscription(String.format("Конвертация из %s", source.getCurrency()))
+                .build();
+        transactionRepository.save(in);
+
+        log.info("Convert: {} {} → {} {}, rate={}, sourceBalance={}, targetBalance={}",
+                amount, source.getCurrency(),
+                convertedAmount, target.getCurrency(),
+                rate, source.getBalance(), target.getBalance());
+
+        return new ConversionResult(
+                fromWalletId,
+                toWalletId,
+                source.getCurrency(),
+                target.getCurrency(),
+                amount,
+                convertedAmount,
+                rate,
+                source.getBalance(),
+                target.getBalance()
+        );
+    }
+
 
     // ================================================================
     // ЗАПРОСЫ

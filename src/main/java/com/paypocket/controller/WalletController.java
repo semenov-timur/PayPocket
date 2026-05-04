@@ -6,6 +6,7 @@ import com.paypocket.model.Currency;
 import com.paypocket.model.Transaction;
 import com.paypocket.model.User;
 import com.paypocket.model.Wallet;
+import com.paypocket.service.ExchangeRateService;
 import com.paypocket.service.UserService;
 import com.paypocket.service.WalletService;
 import jakarta.servlet.http.HttpSession;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,10 +29,14 @@ public class WalletController {
 
     private final WalletService walletService;
     private final UserService userService;
+    private final ExchangeRateService exchangeRateService;
 
-    public WalletController(WalletService walletService, UserService userService) {
+    public WalletController(WalletService walletService,
+                            UserService userService,
+                            ExchangeRateService exchangeRateService) {
         this.walletService = walletService;
         this.userService = userService;
+        this.exchangeRateService = exchangeRateService;
     }
 
     // ========================
@@ -38,7 +44,8 @@ public class WalletController {
     // ========================
 
     @GetMapping("/dashboard")
-    public String dashboard(HttpSession session,
+    public String dashboard(@RequestParam(required = false) UUID walletId,
+                            HttpSession session,
                             Model model) {
         User user = getCurrentUser(session);
         if (user == null) {
@@ -46,14 +53,46 @@ public class WalletController {
         }
 
         List<Wallet> wallets = walletService.getUserWallets(user.getId());
+
+        Wallet activeWallet = null;
+        List<Transaction> activeTransactions = Collections.emptyList();
+
+        if (!wallets.isEmpty()) {
+            activeWallet = wallets.stream()
+                    .filter(w -> walletId != null && w.getId().equals(walletId))
+                    .findFirst()
+                    .orElse(wallets.get(0));
+            activeTransactions = walletService.getTransactionHistory(activeWallet.getId());
+        }
+
         model.addAttribute("user", user);
         model.addAttribute("wallets", wallets);
+        model.addAttribute("activeWallet", activeWallet);
+        model.addAttribute("selectedWalletId", activeWallet != null ? activeWallet.getId() : null);
+        model.addAttribute("transactions", activeTransactions);
+        model.addAttribute("usdRate", exchangeRateService.getRate(Currency.USD, Currency.RUB));
+        model.addAttribute("eurRate", exchangeRateService.getRate(Currency.EUR, Currency.RUB));
         return "dashboard";
     }
 
     // ========================
     // СОЗДАНИЕ КОШЕЛЬКА
     // ========================
+
+    @GetMapping("/wallets/new")
+    public String showCreateWalletPage(@RequestParam(required = false) UUID walletId,
+                                       HttpSession session,
+                                       Model model) {
+        User user = getCurrentUser(session);
+        if (user == null) {
+            return "redirect:/login";
+        }
+        List<Wallet> wallets = walletService.getUserWallets(user.getId());
+        Wallet selected = resolveSelectedWallet(wallets, walletId);
+        model.addAttribute("user", user);
+        model.addAttribute("selectedWalletId", selected != null ? selected.getId() : null);
+        return "wallet-new";
+    }
 
     @PostMapping("/wallets/create")
     public String createWallet(@RequestParam String name,
@@ -83,7 +122,8 @@ public class WalletController {
     // ========================
 
     @GetMapping("/deposit")
-    public String showDepositPage(HttpSession session,
+    public String showDepositPage(@RequestParam(required = false) UUID walletId,
+                                  HttpSession session,
                                   Model model) {
         User user = getCurrentUser(session);
         if (user == null) {
@@ -91,7 +131,11 @@ public class WalletController {
         }
 
         List<Wallet> wallets = walletService.getUserWallets(user.getId());
-        model.addAttribute("wallets", wallets);
+        Wallet wallet = resolveSelectedWallet(wallets, walletId);
+
+        model.addAttribute("user", user);
+        model.addAttribute("wallet", wallet);
+        model.addAttribute("selectedWalletId", wallet != null ? wallet.getId() : null);
         return "deposit";
     }
 
@@ -120,7 +164,8 @@ public class WalletController {
     // ========================
 
     @GetMapping("/transfer")
-    public String showTransferPage(HttpSession session,
+    public String showTransferPage(@RequestParam(required = false) UUID walletId,
+                                   HttpSession session,
                                    Model model) {
         User user = getCurrentUser(session);
         if (user == null) {
@@ -128,7 +173,11 @@ public class WalletController {
         }
 
         List<Wallet> wallets = walletService.getUserWallets(user.getId());
-        model.addAttribute("wallets", wallets);
+        Wallet wallet = resolveSelectedWallet(wallets, walletId);
+
+        model.addAttribute("user", user);
+        model.addAttribute("wallet", wallet);
+        model.addAttribute("selectedWalletId", wallet != null ? wallet.getId() : null);
         return "transfer";
     }
 
@@ -165,6 +214,55 @@ public class WalletController {
     }
 
     // ========================
+    // КОНВЕРТАЦИЯ
+    // ========================
+
+    @GetMapping("/convert")
+    public String showConvertPage(@RequestParam(required = false) UUID walletId,
+                                  HttpSession session,
+                                  Model model) {
+        User user = getCurrentUser(session);
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        List<Wallet> wallets = walletService.getUserWallets(user.getId());
+        Wallet selected = resolveSelectedWallet(wallets, walletId);
+
+        model.addAttribute("user", user);
+        model.addAttribute("wallets", wallets);
+        model.addAttribute("selectedWalletId", selected != null ? selected.getId() : null);
+        model.addAttribute("usdRate", exchangeRateService.getRate(Currency.USD, Currency.RUB));
+        model.addAttribute("eurRate", exchangeRateService.getRate(Currency.EUR, Currency.RUB));
+        return "convert";
+    }
+
+    @PostMapping("/convert")
+    public String convert(@RequestParam UUID fromWalletId,
+                          @RequestParam UUID toWalletId,
+                          @RequestParam BigDecimal amount,
+                          HttpSession session,
+                          RedirectAttributes redirectAttributes) {
+        User user = getCurrentUser(session);
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            var result = walletService.convert(fromWalletId, toWalletId, amount);
+            redirectAttributes.addFlashAttribute("success",
+                    String.format("Конвертация: %s %s → %s %s (курс %s)",
+                            result.getFromAmount(), result.getFromCurrency(),
+                            result.getToAmount(), result.getToCurrency(),
+                            result.getRate()));
+        } catch (PayPocketException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/dashboard";
+    }
+
+    // ========================
     // ИСТОРИЯ ОПЕРАЦИЙ
     // ========================
 
@@ -182,7 +280,9 @@ public class WalletController {
         Page<Transaction> transactions = walletService.getTransactionHistory(
                 walletId, page, 10);
 
+        model.addAttribute("user", user);
         model.addAttribute("wallet", wallet);
+        model.addAttribute("selectedWalletId", wallet.getId());
         model.addAttribute("transactions", transactions);
         model.addAttribute("currentPage", page);
 
@@ -196,6 +296,23 @@ public class WalletController {
     private User getCurrentUser(HttpSession session) {
         User user = (User) session.getAttribute("currentUser");
         return user;
+    }
+
+    /**
+     * Возвращает кошелёк по запрошенному id, если он принадлежит пользователю,
+     * иначе — первый кошелёк пользователя, иначе null.
+     */
+    private Wallet resolveSelectedWallet(List<Wallet> userWallets, UUID requestedId) {
+        if (userWallets.isEmpty()) {
+            return null;
+        }
+        if (requestedId != null) {
+            return userWallets.stream()
+                    .filter(w -> w.getId().equals(requestedId))
+                    .findFirst()
+                    .orElse(userWallets.get(0));
+        }
+        return userWallets.get(0);
     }
 
 }

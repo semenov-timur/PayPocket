@@ -181,9 +181,12 @@ public class Transaction {
          * Можно добавить валидацию перед созданием.
          */
         public Transaction build() {
-            if ((type == TransactionType.TRANSACTION_IN || type == TransactionType.TRANSACTION_OUT)
+            if ((type == TransactionType.TRANSACTION_IN
+                    || type == TransactionType.TRANSACTION_OUT
+                    || type == TransactionType.CONVERT_IN
+                    || type == TransactionType.CONVERT_OUT)
                     && counterpartyWalletId == null) {
-                throw new IllegalStateException("Для перевода необходимо указать counterpartyWalletId");
+                throw new IllegalStateException("Для перевода/конвертации необходимо указать counterpartyWalletId");
             }
             return new Transaction(this);
         }

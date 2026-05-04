@@ -63,6 +63,17 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 403 – операция запрещена (нет прав на ресурс).
+     */
+    @ExceptionHandler(WalletOwnershipException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(PayPocketException e) {
+        log.warn("Forbidden: {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse("FORBIDDEN", e.getMessage()));
+    }
+
+    /**
      * 400 – ошибки валидации (@Valid).
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)

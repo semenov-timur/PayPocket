@@ -11,9 +11,11 @@
 :root {
     --bg:           #f2f2f7;
     --surface:      #ffffff;
+    --surface-alt:  #f7f7f9;
     --input-bg:     #ebebeb;
     --input-focus:  #e0e0e0;
     --border:       #e5e5ea;
+    --border-soft:  #efeff2;
     --text:         #1c1c1e;
     --text-sub:     #8e8e93;
     --btn-dark:     #1c1c1e;
@@ -23,7 +25,9 @@
     --radius-sm:    8px;
     --radius-md:    14px;
     --radius-lg:    20px;
+    --radius-xl:    24px;
     --shadow:       0 2px 14px rgba(0, 0, 0, .07);
+    --shadow-lg:    0 6px 24px rgba(0, 0, 0, .10);
     --sidebar-w:    240px;
 }
 
@@ -290,87 +294,269 @@ body {
     margin-top: 26px;
 }
 
-/* ─── Wallet cards ────────────────────────────────────────── */
+/* ─── Dashboard two-column layout ─────────────────────────── */
 
-.wallets-grid {
+.dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 14px;
-    margin-bottom: 24px;
+    grid-template-columns: minmax(320px, 1fr) minmax(360px, 1.1fr);
+    gap: 28px;
+    align-items: start;
 }
 
-.wallet-card {
+/* Left: vertical wallet stack */
+.wallet-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 6px;
+}
+
+.wallet-stack::-webkit-scrollbar {
+    width: 6px;
+}
+.wallet-stack::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+/* Bank-style wallet card */
+.bank-card {
     background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 20px 22px;
+    border-radius: var(--radius-xl);
+    padding: 22px 24px;
     box-shadow: var(--shadow);
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform .18s ease, box-shadow .18s ease;
+    border: 1px solid transparent;
+    min-height: 120px;
+}
+
+.bank-card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+.bank-card.is-active {
+    background: linear-gradient(140deg, #1c1c1e 0%, #2c2c2e 100%);
+    color: #fff;
+    box-shadow: var(--shadow-lg);
+}
+
+.bank-card.is-active .bc-name,
+.bank-card.is-active .bc-currency {
+    color: rgba(255, 255, 255, .7);
+}
+
+.bc-head {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    margin-bottom: 18px;
 }
 
-.wc-label {
-    font-size: 12px;
-    color: var(--text-sub);
-    margin-bottom: 4px;
-}
-
-.wc-balance {
-    font-size: 1.8rem;
-    font-weight: 700;
-    letter-spacing: -1px;
-    line-height: 1;
-}
-
-.wc-currency {
+.bc-name {
     font-size: 13px;
     color: var(--text-sub);
-    margin-top: 4px;
+    font-weight: 500;
 }
 
-/* ─── Quick action buttons ────────────────────────────────── */
-
-.action-row {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 24px;
-}
-
-.action-btn {
-    background: var(--surface);
-    border: none;
-    border-radius: var(--radius-md);
-    padding: 14px 20px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    cursor: pointer;
-    text-decoration: none;
-    box-shadow: var(--shadow);
-    transition: background .15s;
-}
-
-.action-btn:hover {
-    background: var(--input-bg);
-}
-
-.action-icon {
+.bc-chip {
     width: 32px;
-    height: 32px;
+    height: 22px;
+    border-radius: 5px;
+    background: linear-gradient(135deg, #d6d6dc 0%, #b9b9c1 100%);
+    flex-shrink: 0;
+}
+
+.bank-card.is-active .bc-chip {
+    background: linear-gradient(135deg, #ffd86b 0%, #c9a23a 100%);
+}
+
+.bc-balance {
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.7px;
+    line-height: 1.1;
+}
+
+.bc-currency {
+    font-size: 12px;
+    color: var(--text-sub);
+    margin-top: 6px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+/* Create-wallet placeholder card */
+.bank-card-add {
+    border: 2px dashed #cfcfd6;
+    background: transparent;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text-sub);
+    text-decoration: none;
+    padding: 28px 24px;
+    border-radius: var(--radius-xl);
+    transition: background .15s, border-color .15s, color .15s;
+    min-height: 120px;
+}
+
+.bank-card-add:hover {
+    background: var(--surface);
+    border-color: var(--text-sub);
+    color: var(--text);
+}
+
+.bank-card-add .plus {
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     background: var(--input-bg);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--text-sub);
+}
+
+.bank-card-add .label {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Right column: rates + history */
+.right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.rates-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.rate-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.rate-flag {
+    font-size: 26px;
+    line-height: 1;
     flex-shrink: 0;
 }
 
-/* ─── New wallet form ─────────────────────────────────────── */
+.rate-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.rate-code {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.rate-value {
+    font-size: 14px;
+    color: var(--text-sub);
+}
+
+.rate-value strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* History panel on dashboard */
+.history-panel {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.history-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.history-header .title {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.history-header .subtitle {
+    font-size: 12px;
+    color: var(--text-sub);
+}
+
+.history-body {
+    max-height: 460px;
+    overflow-y: auto;
+}
+
+/* Quick actions row above history */
+.dashboard-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.action-pill {
+    flex: 1;
+    min-width: 110px;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: background .15s, transform .15s;
+}
+
+.action-pill:hover {
+    background: var(--input-bg);
+    transform: translateY(-1px);
+}
+
+.action-pill .ico {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--input-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+/* ─── Generic card ────────────────────────────────────────── */
 
 .card {
     background: var(--surface);
@@ -399,7 +585,7 @@ body {
     min-width: 130px;
 }
 
-/* ─── Form card (deposit / transfer) ─────────────────────── */
+/* ─── Form card (deposit / transfer / convert) ───────────── */
 
 .form-card {
     background: var(--surface);
@@ -411,17 +597,18 @@ body {
 
 /* Wallet summary header inside form pages */
 .wallet-summary {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 20px 22px;
-    box-shadow: var(--shadow);
+    background: linear-gradient(140deg, #1c1c1e 0%, #2c2c2e 100%);
+    color: #fff;
+    border-radius: var(--radius-xl);
+    padding: 22px 24px;
+    box-shadow: var(--shadow-lg);
     margin-bottom: 20px;
     max-width: 480px;
 }
-.ws-label  { font-size: 12px; color: var(--text-sub); }
-.ws-name   { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-.ws-bal    { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
-.ws-cur    { font-size: 13px; color: var(--text-sub); margin-top: 4px; }
+.ws-label  { font-size: 12px; color: rgba(255, 255, 255, .65); }
+.ws-name   { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: rgba(255, 255, 255, .85); }
+.ws-bal    { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
+.ws-cur    { font-size: 12px; color: rgba(255, 255, 255, .65); margin-top: 6px; letter-spacing: .4px; text-transform: uppercase; }
 
 /* ─── Transaction list ────────────────────────────────────── */
 
@@ -433,8 +620,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 13px 0;
-    border-bottom: 1px solid var(--border);
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--border-soft);
 }
 .tx-item:last-child { border-bottom: none; }
 
@@ -470,6 +657,19 @@ body {
 
 .income  { color: var(--income); }
 .expense { color: var(--expense); }
+
+.tx-empty {
+    text-align: center;
+    padding: 32px 20px;
+    color: var(--text-sub);
+    font-size: 14px;
+}
+
+/* History page tx list still uses tx-item but without horizontal padding (lives in .card) */
+.card .tx-item {
+    padding-left: 0;
+    padding-right: 0;
+}
 
 /* ─── Pagination ──────────────────────────────────────────── */
 
@@ -519,6 +719,16 @@ body {
 
 /* ─── Responsive ──────────────────────────────────────────── */
 
+@media (max-width: 1000px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    .wallet-stack {
+        max-height: none;
+        overflow: visible;
+    }
+}
+
 @media (max-width: 800px) {
     .sidebar {
         width: 100%;
@@ -535,14 +745,11 @@ body {
 
     .sidebar-logo    { margin-bottom: 0; flex: 1; }
     .sidebar-user    { padding: 0; margin: 0; border: none; }
-    .sidebar-nav     { display: flex; gap: 4px; flex: none; }
+    .sidebar-nav     { display: flex; gap: 4px; flex: none; flex-wrap: wrap; }
     .sidebar-nav li  { margin-bottom: 0; }
     .nav-icon        { display: none; }
     .sidebar-logout  { padding: 0; border: none; margin: 0; }
 
     .app  { flex-direction: column; }
     .main { margin-left: 0; padding: 20px 16px; }
-
-    .wallets-grid { grid-template-columns: 1fr; }
-    .action-row   { flex-wrap: wrap; }
 }

@@ -33,6 +33,9 @@ public class WalletServiceTest {
     @Mock
     private TransactionRepository transactionRepository;
 
+    @Mock
+    private ExchangeRateService exchangeRateService;
+
     @InjectMocks
     private WalletService walletService;
 

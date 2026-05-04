@@ -1,6 +1,7 @@
 package com.paypocket.controller.api;
 
 import com.paypocket.dto.CreateUserRequest;
+import com.paypocket.dto.LoginRequest;
 import com.paypocket.dto.UserResponse;
 import com.paypocket.model.User;
 import com.paypocket.service.UserService;
@@ -61,6 +62,15 @@ public class UserApiController {
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable UUID id) {
         User user = userService.getById(id);
+        return ResponseEntity.ok(UserResponse.from(user));
+    }
+
+    /**
+     * POST /api/v1/users/login — авторизация пользователя.
+     */
+    @PostMapping("/login")
+    public ResponseEntity<UserResponse> login(@Valid @RequestBody LoginRequest request) {
+        User user = userService.authenticate(request.getUsername(), request.getPassword());
         return ResponseEntity.ok(UserResponse.from(user));
     }
 

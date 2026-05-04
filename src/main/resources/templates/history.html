@@ -15,23 +15,30 @@
         <div class="sidebar-logo">PayPocket</div>
 
         <div class="sidebar-user">
-            <div class="avatar">P</div>
+            <div class="avatar"
+                 th:text="${#strings.toUpperCase(#strings.substring(user.username, 0, 1))}">U</div>
+            <span class="sidebar-username" th:text="${user.username}">username</span>
         </div>
 
         <ul class="sidebar-nav">
             <li>
-                <a th:href="@{/dashboard}">
+                <a th:href="@{/dashboard(walletId=${selectedWalletId})}">
                     <span class="nav-icon">⊞</span> Главная
                 </a>
             </li>
             <li>
-                <a th:href="@{/deposit}">
+                <a th:href="@{/deposit(walletId=${selectedWalletId})}">
                     <span class="nav-icon">＋</span> Пополнить
                 </a>
             </li>
             <li>
-                <a th:href="@{/transfer}">
+                <a th:href="@{/transfer(walletId=${selectedWalletId})}">
                     <span class="nav-icon">↗</span> Перевести
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/convert(walletId=${selectedWalletId})}">
+                    <span class="nav-icon">⇄</span> Конвертировать
                 </a>
             </li>
         </ul>
@@ -51,7 +58,7 @@
             <div class="ws-label">Счёт</div>
             <div class="ws-name" th:text="${wallet.name}">Название счёта</div>
             <div class="ws-bal">
-                <span th:text="${wallet.currency == 'USD' ? '$' : (wallet.currency == 'EUR' ? '€' : '₽')}">$</span><!--
+                <span th:text="${wallet.currency.name() == 'USD' ? '$' : (wallet.currency.name() == 'EUR' ? '€' : '₽')}">$</span><!--
                 --><span th:text="${wallet.balance}">0.00</span>
             </div>
             <div class="ws-cur" th:text="${wallet.currency}">USD</div>
@@ -75,8 +82,8 @@
                     <div class="tx-right">
                         <span class="tx-amount"
                               th:classappend="${tx.type.name().contains('OUT') || tx.type.name() == 'WITHDRAW' ? 'expense' : 'income'}"
-                              th:text="${(tx.type.name().contains('OUT') || tx.type.name() == 'WITHDRAW' ? '−' : '+') + tx.amount}">
-                            +1 000
+                              th:text="${(tx.type.name().contains('OUT') || tx.type.name() == 'WITHDRAW' ? '−' : '+') + tx.amount + ' ' + wallet.currency.symbol}">
+                            +1 000 $
                         </span>
                         <span class="tx-date"
                               th:text="${#temporals.format(tx.createdAt, 'HH:mm · dd.MM.yy')}">

@@ -22,18 +22,23 @@
 
         <ul class="sidebar-nav">
             <li>
-                <a th:href="@{/dashboard}" class="active">
+                <a th:href="@{/dashboard(walletId=${selectedWalletId})}" class="active">
                     <span class="nav-icon">⊞</span> Главная
                 </a>
             </li>
             <li>
-                <a th:href="@{/deposit}">
+                <a th:href="@{/deposit(walletId=${selectedWalletId})}">
                     <span class="nav-icon">＋</span> Пополнить
                 </a>
             </li>
             <li>
-                <a th:href="@{/transfer}">
+                <a th:href="@{/transfer(walletId=${selectedWalletId})}">
                     <span class="nav-icon">↗</span> Перевести
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/convert(walletId=${selectedWalletId})}">
+                    <span class="nav-icon">⇄</span> Конвертировать
                 </a>
             </li>
         </ul>
@@ -47,70 +52,110 @@
     <main class="main">
 
         <h1 class="page-title">
-            Привет, <span th:text="${user.username}">username</span>!
+            Здравствуйте, <span th:text="${user.username}">username</span>!
         </h1>
 
         <!-- Flash messages -->
         <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
         <div th:if="${error}"   class="alert alert-error"   th:text="${error}"></div>
 
-        <!-- Wallet cards -->
-        <div th:if="${!wallets.isEmpty()}" class="wallets-grid">
-            <div th:each="wallet : ${wallets}" class="wallet-card">
-                <div>
-                    <div class="wc-label" th:text="${wallet.name}">Название счёта</div>
-                    <div class="wc-balance">
-                        <span th:text="${wallet.currency == 'USD' ? '$' : (wallet.currency == 'EUR' ? '€' : '₽')}">$</span><!--
-                        --><span th:text=" ${wallet.balance}">0.00</span>
+        <div class="dashboard-grid">
+
+            <!-- ─── Left column: wallet stack ─── -->
+            <div class="wallet-stack">
+
+                <a th:each="wallet : ${wallets}"
+                   th:href="@{/dashboard(walletId=${wallet.id})}"
+                   class="bank-card"
+                   th:classappend="${activeWallet != null and activeWallet.id == wallet.id} ? 'is-active' : ''">
+
+                    <div class="bc-head">
+                        <div class="bc-name" th:text="${wallet.name}">Название счёта</div>
+                        <div class="bc-chip"></div>
                     </div>
-                    <div class="wc-currency" th:text="${wallet.currency}">USD</div>
-                </div>
-                <a th:href="@{/history/{id}(id=${wallet.id})}" class="btn btn-light btn-sm">
-                    История
+
+                    <div class="bc-balance">
+                        <span th:text="${wallet.currency.name() == 'USD' ? '$' : (wallet.currency.name() == 'EUR' ? '€' : '₽')}">$</span><!--
+                        --><span th:text="${wallet.balance}">0.00</span>
+                    </div>
+                    <div class="bc-currency" th:text="${wallet.currency}">USD</div>
+                </a>
+
+                <a th:href="@{/wallets/new}" class="bank-card-add">
+                    <div class="plus">+</div>
+                    <div class="label">Создать счёт</div>
                 </a>
             </div>
-        </div>
 
-        <div th:if="${wallets.isEmpty()}" class="card">
-            <p class="empty">У вас пока нет счетов. Создайте первый!</p>
-        </div>
+            <!-- ─── Right column: rates + actions + history ─── -->
+            <div class="right-col">
 
-        <!-- Quick actions -->
-        <div th:unless="${wallets.isEmpty()}">
-            <p class="section-label">Операции</p>
-            <div class="action-row">
-                <a th:href="@{/transfer}" class="action-btn">
-                    <span class="action-icon">↗</span> Перевести
-                </a>
-                <a th:href="@{/deposit}" class="action-btn">
-                    <span class="action-icon">＋</span> Пополнить
-                </a>
-            </div>
-        </div>
-
-        <!-- New wallet form -->
-        <p class="section-label">Новый счёт</p>
-        <div class="card">
-            <div class="card-title">Создать счёт</div>
-            <form th:action="@{/wallets/create}" method="post">
-                <div class="inline-form">
-                    <div class="field">
-                        <input type="text" name="name"
-                               required
-                               placeholder="Название счёта">
+                <div class="rates-row">
+                    <div class="rate-card">
+                        <div class="rate-flag">🇺🇸</div>
+                        <div class="rate-info">
+                            <div class="rate-code">USD</div>
+                            <div class="rate-value">1 $ = <strong th:text="${#numbers.formatDecimal(usdRate, 1, 2)}">90.00</strong> ₽</div>
+                        </div>
                     </div>
-                    <div class="field" style="max-width: 140px;">
-                        <select name="currency">
-                            <option value="RUB">₽ RUB</option>
-                            <option value="USD">$ USD</option>
-                            <option value="EUR">€ EUR</option>
-                        </select>
+                    <div class="rate-card">
+                        <div class="rate-flag">🇪🇺</div>
+                        <div class="rate-info">
+                            <div class="rate-code">EUR</div>
+                            <div class="rate-value">1 € = <strong th:text="${#numbers.formatDecimal(eurRate, 1, 2)}">100.00</strong> ₽</div>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-dark btn-sm" style="height: 48px; padding: 0 22px;">
-                        Создать
-                    </button>
                 </div>
-            </form>
+
+                <div th:if="${activeWallet != null}" class="dashboard-actions">
+                    <a th:href="@{/deposit(walletId=${activeWallet.id})}" class="action-pill">
+                        <span class="ico">＋</span> Пополнить
+                    </a>
+                    <a th:href="@{/transfer(walletId=${activeWallet.id})}" class="action-pill">
+                        <span class="ico">↗</span> Перевести
+                    </a>
+                    <a th:href="@{/convert}" class="action-pill">
+                        <span class="ico">⇄</span> Конвертация
+                    </a>
+                </div>
+
+                <div class="history-panel">
+                    <div class="history-header">
+                        <div class="title">История операций</div>
+                        <div class="subtitle"
+                             th:if="${activeWallet != null}"
+                             th:text="${activeWallet.name}">Название счёта</div>
+                    </div>
+                    <div class="history-body">
+                        <div th:if="${activeWallet == null}" class="tx-empty">
+                            Создайте первый счёт, чтобы увидеть операции.
+                        </div>
+                        <div th:if="${activeWallet != null and transactions.isEmpty()}" class="tx-empty">
+                            Операций пока нет.
+                        </div>
+                        <ul class="tx-list" th:if="${activeWallet != null and !transactions.isEmpty()}">
+                            <li th:each="tx : ${transactions}" class="tx-item">
+                                <div class="tx-info">
+                                    <span class="tx-title" th:text="${tx.type.description}">Тип</span>
+                                    <span class="tx-desc" th:text="${tx.description ?: '—'}">Описание</span>
+                                </div>
+                                <div class="tx-right">
+                                    <span class="tx-amount"
+                                          th:classappend="${tx.type.name().contains('OUT') || tx.type.name() == 'WITHDRAW' ? 'expense' : 'income'}"
+                                          th:text="${(tx.type.name().contains('OUT') || tx.type.name() == 'WITHDRAW' ? '−' : '+') + tx.amount + ' ' + activeWallet.currency.symbol}">
+                                        +1 000 $
+                                    </span>
+                                    <span class="tx-date"
+                                          th:text="${#temporals.format(tx.createdAt, 'HH:mm · dd.MM.yy')}">
+                                        22:02
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
     </main>

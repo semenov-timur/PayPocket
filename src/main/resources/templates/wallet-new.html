@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PayPocket — Новый счёт</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="app">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">PayPocket</div>
+
+        <div class="sidebar-user">
+            <div class="avatar"
+                 th:text="${#strings.toUpperCase(#strings.substring(user.username, 0, 1))}">U</div>
+            <span class="sidebar-username" th:text="${user.username}">username</span>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a th:href="@{/dashboard(walletId=${selectedWalletId})}">
+                    <span class="nav-icon">⊞</span> Главная
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/deposit(walletId=${selectedWalletId})}">
+                    <span class="nav-icon">＋</span> Пополнить
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/transfer(walletId=${selectedWalletId})}">
+                    <span class="nav-icon">↗</span> Перевести
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/convert(walletId=${selectedWalletId})}">
+                    <span class="nav-icon">⇄</span> Конвертировать
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-logout">
+            <a th:href="@{/logout}">Выйти</a>
+        </div>
+    </aside>
+
+    <!-- ── Main ── -->
+    <main class="main">
+
+        <h1 class="page-title">Новый счёт</h1>
+
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <div class="form-card">
+
+            <form th:action="@{/wallets/create}" method="post">
+
+                <div class="field">
+                    <input type="text" name="name"
+                           required
+                           placeholder="Название счёта">
+                </div>
+
+                <div class="field">
+                    <select name="currency">
+                        <option value="RUB">₽ RUB — Российский рубль</option>
+                        <option value="USD">$ USD — Доллар США</option>
+                        <option value="EUR">€ EUR — Евро</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 6px;">
+                    <button type="submit" class="btn btn-dark">Создать</button>
+                </div>
+
+            </form>
+
+        </div>
+
+        <a th:href="@{/dashboard}" class="back-link">← К главной</a>
+
+    </main>
+</div>
+
+</body>
+</html>
