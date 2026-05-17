@@ -6,6 +6,8 @@ import com.paypocket.model.User;
 import com.paypocket.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,12 +19,6 @@ import java.util.UUID;
  *
  * <p>Отвечает за регистрацию, поиск и валидацию пользователей.
  * Все бизнес-правила проверяются здесь.</p>
- *
- * <p>@Service – Spring создасть один экземпляр этого класса (бин)
- * автоматически и внедрит UserRepository через конструктор.</p>
- *
- * <p>@Transactional(readOnly=true) на классе – все методы по умолчанию
- * выполняются в readOnly транзакции (это оптимизация для SELECT).</p>
  */
 @Service
 @Transactional(readOnly = true)
@@ -30,38 +26,31 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    /**
+     * PasswordEncoder — интерфейс для шифрования пароля.
+     * Реализация BCryptPasswordEncoder:
+     *   - encode("1234") → "$2a$10$abcdef..." (длинная строка-хэш)
+     *   - matches("1234", "$2a$10$abcdef...") → true / false
+     * Хэш необратим: из хэша нельзя получить исходный пароль.
+     * Каждый вызов encode даёт РАЗНЫЙ хэш (внутри генерируется случайная "соль"),
+     * но matches всё равно правильно сравнивает.
+     */
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
-    /**
-     * Конструктор с внедрением зависимости (DI - dependency injection).
-     *
-     * <p>Принимает интерфейс UserRepository,
-     * который Spring подставит автоматически.</p>
-     *
-     * @param userRepository репозиторий пользователей
-     */
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     /**
      * Регистрирует нового пользователя.
-     *
-     * <p>Проверяет корректность и уникальность
-     * username и email перед созданием.</p>
-     *
-     * @param username имя пользователя
-     * @param email    электронная почта
-     * @param password пароль
-     * @return созданный пользователь
-     * @throws DuplicateUserException если username или email уже заняты
+     * Пароль хэшируется перед сохранением — в БД сырого пароля никогда нет.
      */
     @Transactional
     public User register(String username, String email, String password) {
-        // Валидация входных данных
         validateRegistrationInput(username, email, password);
 
-        // Проверка уникальности
         if (userRepository.existsByUsernameIgnoreCase(username)) {
             log.warn("Registration taken – username taken: {}", username);
             throw new DuplicateUserException("username", username);
@@ -70,9 +59,8 @@ public class UserService {
             throw new DuplicateUserException("email", email);
         }
 
-        // Создание и сохранение
-        // TODO: хэширование паролей
-        User user = new User(username, email, password);
+        String hashedPassword = passwordEncoder.encode(password);
+        User user = new User(username, email, hashedPassword);
         userRepository.save(user);
 
         log.info("User registered successfully: username – {}, id – {}", username, user.getId());
@@ -80,13 +68,11 @@ public class UserService {
     }
 
     /**
-     * Аутентификация пользователя.
+     * Аутентификация: ищем пользователя и сверяем введённый пароль с сохранённым хэшем.
      *
-     * @param username имя пользователя
-     * @param password пароль
-     * @return авторизованный пользователь
-     * @throws UserNotFoundException    если пользователь не найден
-     * @throws IllegalArgumentException если пароль неверный
+     * <p>passwordEncoder.matches(raw, hash) сам хэширует raw с той же солью, что внутри hash,
+     * и сравнивает результаты. Сравнивать строки напрямую через equals нельзя —
+     * в БД лежит хэш, а пользователь присылает сырой пароль.</p>
      */
     public User authenticate(String username, String password) {
         User user = userRepository.findByUsernameIgnoreCase(username)
@@ -95,7 +81,7 @@ public class UserService {
                     return new UserNotFoundException(username);
                 });
 
-        if (!user.getPassword().equals(password)) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             log.warn("Auth failed – wrong password: username – {}", username);
             throw new IllegalArgumentException("Неверный пароль!");
         }
@@ -104,45 +90,20 @@ public class UserService {
         return user;
     }
 
-    /**
-     * Находит пользователя по username.
-     *
-     * @param username имя пользователя
-     * @return найденный пользователь
-     * @throws UserNotFoundException если пользователь не найден
-     */
     public User getByUsername(String username) {
         return userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new UserNotFoundException(username));
     }
 
-    /**
-     * Находит пользователя по id.
-     *
-     * @param userId имя пользователя
-     * @return найденный пользователь
-     * @throws UserNotFoundException если пользователь не найден
-     */
     public User getById(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
     }
 
-    /**
-     * Возвращает список всех пользователей.
-     *
-     * @return список пользователей (может быть пустым)
-     */
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
-    // TODO: добавить расширенные проверки
-
-    /**
-     * Проверяет корректность входных данных при регистрации.
-     * Здесь пока базовые проверки. Нужно использовать Bean validation.
-     */
     private void validateRegistrationInput(String username, String email, String password) {
         if (username == null || username.isBlank()) {
             throw new IllegalArgumentException("Имя пользователя не может быть пустым");

@@ -36,6 +36,19 @@ dependencies {
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation 'org.springframework.boot:spring-boot-starter-flyway'
+
+    // BCrypt — для безопасного хэширования паролей.
+    // Берём ровно один модуль из Spring Security, без полного стартера —
+    // нам нужен только BCryptPasswordEncoder, а не вся инфраструктура авторизации.
+    implementation 'org.springframework.security:spring-security-crypto'
+
+    // JJWT — библиотека для создания и проверки JWT-токенов.
+    // api    — публичные интерфейсы (Jwts, JwtBuilder, JwtParser)
+    // impl   — runtime-реализация
+    // jackson — сериализация/десериализация JSON внутри токена
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly    'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly    'io.jsonwebtoken:jjwt-jackson:0.12.6'
 }
 
 application {
