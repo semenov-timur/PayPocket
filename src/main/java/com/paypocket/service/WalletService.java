@@ -117,7 +117,7 @@ public class WalletService {
      * @param amount   сумма пополнения (> 0)
      * @return кошелёк с обновленным балансом
      * @throws com.paypocket.exception.WalletNotFoundException если кошелек не найден
-     * @throws InvalidAmountException                          если сумма <= 0
+     * @throws InvalidAmountException                          если сумма &lt;= 0
      */
     @Transactional
     public Wallet deposit(UUID walletId, BigDecimal amount) {
@@ -149,7 +149,7 @@ public class WalletService {
      * @param amount   сумма для снятия
      * @return кошелек с обновленным балансов
      * @throws com.paypocket.exception.WalletNotFoundException если кошелек не найден
-     * @throws InvalidAmountException                          если сумма <= 0
+     * @throws InvalidAmountException                          если сумма &lt;= 0
      */
     @Transactional
     public Wallet withdraw(UUID walletId, BigDecimal amount) {
@@ -175,13 +175,12 @@ public class WalletService {
     /**
      * Переводит средства между кошельками.
      *
-     * <p>Spring @Transactional делает все автоматически:
+     * <p>Spring {@code @Transactional} делает все автоматически:</p>
      * <ul>
      *      <li>Открывает транзакцию перед методом</li>
      *      <li>COMMIT при успешном завершении</li>
      *      <li>ROLLBACK при любом исключении</li>
-     * </ul>.
-     * </p>
+     * </ul>
      *
      * <p>findByIdForUpdate() добавляет SELECT FOR UPDATE —
      * блокировка строк, как в JDBC-версии.</p>
@@ -195,7 +194,7 @@ public class WalletService {
      * @return результат перевода с полученными балансами
      * @throws InvalidAmountException                             если один из кошельков не найден
      * @throws SelfTransferException                              если отправитель и получатель совпадают
-     * @throws com.paypocket.exception.WalletNotFoundException    если сумма перевода <= 0
+     * @throws com.paypocket.exception.WalletNotFoundException    если сумма перевода &lt;= 0
      * @throws com.paypocket.exception.InsufficientFundsException если в кошельке недостаточно средств для перевода
      */
     @Transactional
@@ -272,7 +271,7 @@ public class WalletService {
      * @param toWalletId   id кошелька-получателя
      * @param amount       сумма списания в валюте источника
      * @return результат конвертации с применённым курсом и итоговыми балансами
-     * @throws InvalidAmountException     если сумма <= 0
+     * @throws InvalidAmountException     если сумма &lt;= 0
      * @throws SelfTransferException      если указан один и тот же кошелёк
      * @throws WalletNotFoundException    если один из кошельков не найден
      * @throws WalletOwnershipException   если кошельки принадлежат разным пользователям

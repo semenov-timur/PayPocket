@@ -85,7 +85,7 @@ public class Wallet {
      * Пополнение кошелька.
      *
      * @param amount сумма пополнения (должна быть > 0)
-     * @throws IllegalArgumentException если amount <= 0
+     * @throws IllegalArgumentException если amount &lt;= 0
      */
     public void deposit(BigDecimal amount) {
         validatePositiveAmount(amount);
@@ -96,7 +96,7 @@ public class Wallet {
      * Списание с кошелька.
      *
      * @param amount сумма списания (должна быть > 0)
-     * @throws IllegalArgumentException если amount <= 0 или недостаточно средств
+     * @throws IllegalArgumentException если amount &lt;= 0 или недостаточно средств
      */
     public void withdraw(BigDecimal amount) {
         validatePositiveAmount(amount);

@@ -1,9 +1,10 @@
 package com.paypocket.controller.api;
 
 import com.paypocket.dto.CreateUserRequest;
-import com.paypocket.dto.LoginRequest;
+import com.paypocket.dto.LoginResponse;
 import com.paypocket.dto.UserResponse;
 import com.paypocket.model.User;
+import com.paypocket.security.JwtService;
 import com.paypocket.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -31,9 +32,11 @@ import java.util.UUID;
 public class UserApiController {
 
     private final UserService userService;
+    private final JwtService jwtService;
 
-    public UserApiController(UserService userService) {
+    public UserApiController(UserService userService, JwtService jwtService) {
         this.userService = userService;
+        this.jwtService = jwtService;
     }
 
     /**
@@ -43,17 +46,21 @@ public class UserApiController {
      * (@NotBlank, @Email, @Size). Если невалидно — вернёт 400 автоматически.</p>
      *
      * <p>@RequestBody — Spring парсит JSON из тела запроса в объект.</p>
+     *
+     * <p>В ответ кладём JWT-токен — пользователь оказывается сразу залогинен
+     * и может дёргать защищённые эндпоинты без отдельного /auth/login.</p>
      */
     @PostMapping
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody CreateUserRequest request) {
+    public ResponseEntity<LoginResponse> register(@Valid @RequestBody CreateUserRequest request) {
         User user = userService.register(
                 request.getUsername(),
                 request.getEmail(),
                 request.getPassword()
         );
+        String token = jwtService.generateToken(user);
         return ResponseEntity
                 .status(HttpStatus.CREATED)     // 201
-                .body(UserResponse.from(user));
+                .body(new LoginResponse(token, user.getId(), user.getUsername()));
     }
 
     /**
@@ -62,15 +69,6 @@ public class UserApiController {
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable UUID id) {
         User user = userService.getById(id);
-        return ResponseEntity.ok(UserResponse.from(user));
-    }
-
-    /**
-     * POST /api/v1/users/login — авторизация пользователя.
-     */
-    @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(@Valid @RequestBody LoginRequest request) {
-        User user = userService.authenticate(request.getUsername(), request.getPassword());
         return ResponseEntity.ok(UserResponse.from(user));
     }
 
