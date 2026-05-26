@@ -15,10 +15,9 @@ import java.util.stream.Collectors;
 /**
  * Глобальный обработчик ошибок для REST API.
  *
- * <p>@RestControllerAdvice — Spring перехватывает исключения из ВСЕХ
- *
- * @RestController и направляет в соответствующий @ExceptionHandler.
- * Клиент всегда получает структурированный JSON с кодом ошибки и сообщением.</p>
+ * <p>{@code @RestControllerAdvice} — Spring перехватывает исключения из ВСЕХ
+ * {@code @RestController} и направляет в соответствующий {@code @ExceptionHandler}.
+ * Клиент всегда получает структурированный JSON с кодом ошибки и сообщением.
  */
 @RestControllerAdvice(basePackages = "com.paypocket.controller.api")
 public class GlobalExceptionHandler {
