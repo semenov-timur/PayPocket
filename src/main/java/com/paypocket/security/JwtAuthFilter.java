@@ -1,5 +1,6 @@
 package com.paypocket.security;
 
+import com.paypocket.model.Role;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,6 +39,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     /** Имя атрибута запроса, в который кладём userId — контроллеры читают его отсюда. */
     public static final String USER_ID_ATTRIBUTE = "authUserId";
+
+    /** Имя атрибута запроса, в который кладём роль пользователя. */
+    public static final String USER_ROLE_ATTRIBUTE = "authUserRole";
+
+    /** Префикс путей, доступных только администраторам. */
+    private static final String ADMIN_PATH_PREFIX = "/api/v1/admin";
 
     /** Стандартная схема Bearer-токенов из RFC 6750. */
     private static final String BEARER_PREFIX = "Bearer ";
@@ -84,7 +91,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         UUID userId = jwtService.extractUserId(token);
+        Role role = jwtService.extractRole(token);
         request.setAttribute(USER_ID_ATTRIBUTE, userId);
+        request.setAttribute(USER_ROLE_ATTRIBUTE, role);
+
+        // Ролевая проверка: эндпоинты /api/v1/admin/** доступны только администраторам.
+        // Токен валиден (значит, 401 уже не нужен), но прав не хватает — отдаём 403.
+        if (request.getRequestURI().startsWith(ADMIN_PATH_PREFIX) && role != Role.ADMIN) {
+            writeForbidden(response, "Недостаточно прав: требуется роль ADMIN");
+            return;
+        }
 
         chain.doFilter(request, response);
     }
@@ -94,10 +110,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
      * чтобы клиенты обрабатывали ошибки авторизации так же, как остальные API-ошибки.
      */
     private void writeUnauthorized(HttpServletResponse response, String message) throws IOException {
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        writeError(response, HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", message);
+    }
+
+    /**
+     * Возвращает 403 в формате JSON: токен валиден, но роли не хватает.
+     */
+    private void writeForbidden(HttpServletResponse response, String message) throws IOException {
+        writeError(response, HttpStatus.FORBIDDEN, "FORBIDDEN", message);
+    }
+
+    private void writeError(HttpServletResponse response, HttpStatus status,
+                            String code, String message) throws IOException {
+        response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        String body = "{\"code\":\"UNAUTHORIZED\",\"message\":\""
+        String body = "{\"code\":\"" + code + "\",\"message\":\""
                 + escapeJson(message)
                 + "\",\"timestamp\":\"" + LocalDateTime.now() + "\"}";
         response.getWriter().write(body);

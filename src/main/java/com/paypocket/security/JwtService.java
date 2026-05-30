@@ -1,5 +1,6 @@
 package com.paypocket.security;
 
+import com.paypocket.model.Role;
 import com.paypocket.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -40,6 +41,9 @@ public class JwtService {
     /** Имя claim'а, в который кладём username (можно прочитать из токена). */
     private static final String CLAIM_USERNAME = "username";
 
+    /** Имя claim'а с ролью пользователя — на нём строится проверка прав. */
+    private static final String CLAIM_ROLE = "role";
+
     /** Секретный ключ HMAC. Им сервер подписывает токены и проверяет чужие подписи. */
     private final SecretKey secretKey;
 
@@ -64,6 +68,7 @@ public class JwtService {
      * <ul>
      *   <li><b>subject</b> = userId — главный идентификатор</li>
      *   <li><b>username</b> — для удобства логов/UI</li>
+     *   <li><b>role</b> — роль пользователя (USER/ADMIN) для проверки прав</li>
      *   <li><b>iat</b> (issued at) и <b>exp</b> (expiration) — JJWT их выставит сам</li>
      * </ul>
      */
@@ -74,6 +79,7 @@ public class JwtService {
         return Jwts.builder()
                 .subject(user.getId().toString())
                 .claim(CLAIM_USERNAME, user.getUsername())
+                .claim(CLAIM_ROLE, user.getRole().name())
                 .issuedAt(now)
                 .expiration(expiresAt)
                 .signWith(secretKey)
@@ -89,6 +95,28 @@ public class JwtService {
     public UUID extractUserId(String token) {
         Claims claims = parseClaims(token);
         return UUID.fromString(claims.getSubject());
+    }
+
+    /**
+     * Извлекает роль из токена.
+     *
+     * <p>Если claim отсутствует или содержит неизвестное значение
+     * (например, старый токен, выпущенный до внедрения ролей) — возвращаем
+     * {@link Role#USER}. Так старые токены продолжают работать как обычные
+     * пользователи, но не получают админских прав.</p>
+     */
+    public Role extractRole(String token) {
+        Claims claims = parseClaims(token);
+        String role = claims.get(CLAIM_ROLE, String.class);
+        if (role == null) {
+            return Role.USER;
+        }
+        try {
+            return Role.valueOf(role);
+        } catch (IllegalArgumentException e) {
+            log.warn("Unknown role claim in token: {} — defaulting to USER", role);
+            return Role.USER;
+        }
     }
 
     /**

@@ -11,7 +11,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -98,10 +97,6 @@ public class UserService {
     public User getById(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-    }
-
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
     }
 
     private void validateRegistrationInput(String username, String email, String password) {
