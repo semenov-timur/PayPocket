@@ -12,6 +12,7 @@ public class UserResponse {
     private UUID id;
     private String username;
     private String email;
+    private String role;
     private String createdAt;
 
     /**
@@ -23,6 +24,7 @@ public class UserResponse {
         response.id = user.getId();
         response.username = user.getUsername();
         response.email = user.getEmail();
+        response.role = user.getRole().name();
         response.createdAt = user.getCreatedAt().toString();
         return response;
     }
@@ -35,6 +37,9 @@ public class UserResponse {
     }
     public String getEmail() {
         return email;
+    }
+    public String getRole() {
+        return role;
     }
     public String getCreatedAt() {
         return createdAt;

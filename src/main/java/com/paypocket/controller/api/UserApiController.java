@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -64,22 +63,11 @@ public class UserApiController {
     }
 
     /**
-     * POST /api/v1/users/{id} — получение пользователя по id.
+     * GET /api/v1/users/{id} — получение пользователя по id.
      */
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable UUID id) {
         User user = userService.getById(id);
         return ResponseEntity.ok(UserResponse.from(user));
-    }
-
-    /**
-     * GET /api/v1/users — получение списка всех пользователей.
-     */
-    @GetMapping
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        List<UserResponse> users = userService.getAllUsers().stream()
-                .map(UserResponse::from)
-                .toList();
-        return ResponseEntity.ok(users);
     }
 }
